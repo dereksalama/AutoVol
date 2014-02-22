@@ -34,24 +34,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
-                <service android:name="edu.mit.media.funf.FunfManager">
-                    <meta-data android:name="default" android:value="@string/default_pipeline"/>
-                </service>
-                <service
-				    android:name="com.example.android.location.ActivityRecognitionIntentService"
-				    android:label="@string/app_name"
-				    android:exported="false">
-				</service>
-                <receiver android:name="edu.mit.media.funf.Launcher" android:enabled="true">
-                                <intent-filter>
-                                        <action android:name="android.intent.action.BATTERY_CHANGED" />
-                                        <action android:name="android.intent.action.BOOT_COMPLETED" />
-                                        <action android:name="android.intent.action.DOCK_EVENT" />
-                                        <action android:name="android.intent.action.ACTION_SCREEN_ON" />
-                                        <action android:name="android.intent.action.USER_PRESENT" />
-                                </intent-filter>
-                 </receiver>
+        <service android:name="edu.mit.media.funf.FunfManager">
+             <meta-data android:name="default" android:value="@string/default_pipeline"/>
+        </service>
+        <service
+	    	android:name="com.example.autovol.ActivityRecognitionIntentService"
+	    	android:label="@string/app_name"
+	    	android:exported="false">
+		</service>
+             <receiver android:name="edu.mit.media.funf.Launcher" android:enabled="true">
+                             <intent-filter>
+                                     <action android:name="android.intent.action.BATTERY_CHANGED" />
+                                     <action android:name="android.intent.action.BOOT_COMPLETED" />
+                                     <action android:name="android.intent.action.DOCK_EVENT" />
+                                     <action android:name="android.intent.action.ACTION_SCREEN_ON" />
+                                     <action android:name="android.intent.action.USER_PRESENT" />
+                             </intent-filter>
+              </receiver>
     </application>
 
 </manifest>

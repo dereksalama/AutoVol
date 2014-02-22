@@ -12,33 +12,25 @@
         android:id="@+id/loc_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+        android:text="loc" />
 
     <TextView
-        android:id="@+id/data_count"
+        android:id="@+id/activity_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignLeft="@+id/loc_text"
         android:layout_below="@+id/loc_text"
-        android:layout_marginTop="51dp"
-        android:text="Large Text"
+        android:layout_marginTop="28dp"
+        android:text="activity"
         android:textAppearance="?android:attr/textAppearanceLarge" />
-
-    <Button
-        android:id="@+id/archive_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/data_count"
-        android:layout_below="@+id/data_count"
-        android:layout_marginTop="40dp"
-        android:text="Archive" />
 
     <Button
         android:id="@+id/scan_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/archive_button"
-        android:layout_centerVertical="true"
+        android:layout_alignLeft="@+id/activity_text"
+        android:layout_below="@+id/activity_text"
+        android:layout_marginTop="40dp"
         android:text="Scan" />
 
 </RelativeLayout>

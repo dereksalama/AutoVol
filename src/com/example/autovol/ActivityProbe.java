@@ -1,18 +1,23 @@
 package com.example.autovol;
 
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
 import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
 import com.google.android.gms.location.ActivityRecognitionClient;
+import com.google.android.gms.location.DetectedActivity;
+import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.probe.Probe.Base;
+import edu.mit.media.funf.probe.Probe.PassiveProbe;
 
-public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnectionFailedListener {
+public class ActivityProbe extends Base implements PassiveProbe, ConnectionCallbacks, OnConnectionFailedListener {
 	
     // Constants that define the activity detection interval
     public static final int MILLISECONDS_PER_SECOND = 1000;
@@ -21,6 +26,9 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
             MILLISECONDS_PER_SECOND * DETECTION_INTERVAL_SECONDS;
     
     public static final String BROADCAST_ACTION = "com.example.autovol.ACTIVITY_RECOGNITION_DATA";
+    public static final String ACTIVITY_TYPE = "activity_type";
+    public static final String ACTIVITY_NAME = "activity_name";
+    public static final String CONFIDENCE = "confidence";
     
     private PendingIntent mActivityRecognitionPendingIntent;
     // Store the current activity recognition client
@@ -31,29 +39,21 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
     public enum REQUEST_TYPE {START, STOP}
     private REQUEST_TYPE mRequestType;
     
-    public ActivityProbe(Context context) {
-    	super(context);
-        /*
-         * Instantiate a new activity recognition client. Since the
-         * parent Activity implements the connection listener and
-         * connection failure listener, the constructor uses "this"
-         * to specify the values of those parameters.
-         */
-        mActivityRecognitionClient =
-                new ActivityRecognitionClient(context, this, this);
-        /*
-         * Create the PendingIntent that Location Services uses
-         * to send activity recognition updates back to this app.
-         */
-        Intent intent = new Intent(
-               context, ActivityRecognitionIntentService.class);
-        /*
-         * Return a PendingIntent that starts the IntentService.
-         */
-        mActivityRecognitionPendingIntent =
-                PendingIntent.getService(context, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-        
+    private BroadcastReceiver receiver = new BroadcastReceiver() {
+		
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			JsonObject data = new JsonObject();
+			data.addProperty(ACTIVITY_NAME, intent.getStringExtra(ACTIVITY_NAME));
+			data.addProperty(ACTIVITY_TYPE, intent.getIntExtra(ACTIVITY_TYPE, 
+					DetectedActivity.UNKNOWN));
+			data.addProperty(CONFIDENCE, intent.getIntExtra(CONFIDENCE, 0));
+			sendData(data);
+		}
+	};
+    
+    public ActivityProbe() {
+    	super();
         mInProgress = false;
     }
 
@@ -61,7 +61,6 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
 	public void onConnectionFailed(ConnectionResult connectionResult) {
         // Turn off the request flag
         mInProgress = false;
-		
 	}
 
 	@Override
@@ -112,11 +111,37 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
      */
 	@Override
     protected void onEnable() {
+		super.onEnable();
+        /*
+         * Instantiate a new activity recognition client. Since the
+         * parent Activity implements the connection listener and
+         * connection failure listener, the constructor uses "this"
+         * to specify the values of those parameters.
+         */
+        mActivityRecognitionClient =
+                new ActivityRecognitionClient(getContext(), this, this);
+        /*
+         * Create the PendingIntent that Location Services uses
+         * to send activity recognition updates back to this app.
+         */
+        Intent intent = new Intent(
+               getContext(), ActivityRecognitionIntentService.class);
+        /*
+         * Return a PendingIntent that starts the IntentService.
+         */
+        mActivityRecognitionPendingIntent =
+                PendingIntent.getService(getContext(), 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        
 		if (!mInProgress) {
 			mInProgress = true;
 			mActivityRecognitionClient.connect();
 			
 			mRequestType = REQUEST_TYPE.START;
+			
+	        IntentFilter filter = new IntentFilter();
+	        filter.addAction(BROADCAST_ACTION);
+	        getContext().registerReceiver(receiver, filter);
 		}
     }
 
@@ -130,6 +155,7 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
      */
 	@Override
     protected void onStart() {
+		super.onStart();
 
     }
 
@@ -141,7 +167,7 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
      */
 	@Override
     protected void onStop() {
-
+		super.onStop();
     }
 
     /**
@@ -152,6 +178,7 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
      */
 	@Override
     protected void onDisable() {
+		super.onDisable();
 		// Set the request type to STOP
         mRequestType = REQUEST_TYPE.STOP;
         
@@ -162,6 +189,7 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
             // Request a connection to Location Services
             mActivityRecognitionClient.connect();
         }
+        getContext().unregisterReceiver(receiver);
     }
 
 }

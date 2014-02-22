@@ -41,9 +41,9 @@ public class ActivityRecognitionIntentService extends IntentService {
              */
             
             Intent resultIntent = new Intent(ActivityProbe.BROADCAST_ACTION);
-            resultIntent.putExtra("activity_type", activityType);
-            resultIntent.putExtra("activity_name", activityName);
-            resultIntent.putExtra("confidence", confidence);
+            resultIntent.putExtra(ActivityProbe.ACTIVITY_TYPE, activityType);
+            resultIntent.putExtra(ActivityProbe.ACTIVITY_NAME, activityName);
+            resultIntent.putExtra(ActivityProbe.CONFIDENCE, confidence);
             sendBroadcast(resultIntent);
         }
 

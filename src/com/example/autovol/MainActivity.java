@@ -4,11 +4,9 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -16,7 +14,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -26,7 +25,6 @@ import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.pipeline.BasicPipeline;
 import edu.mit.media.funf.probe.Probe.DataListener;
 import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
-import edu.mit.media.funf.storage.NameValueDatabaseHelper;
 
 public class MainActivity extends Activity implements DataListener {
 	
@@ -34,9 +32,9 @@ public class MainActivity extends Activity implements DataListener {
 	private FunfManager funfManager;
 	private BasicPipeline pipeline;
 	private SimpleLocationProbe locationProbe;
-	private TextView dataCountView;
-	private Button archiveButton, scanNowButton;
-	private Handler handler;
+	private ActivityProbe activityProbe;
+	private Button scanNowButton;
+	private TextView locationText, activityText;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
 	    @Override
 	    public void onServiceConnected(ComponentName name, IBinder service) {
@@ -45,10 +43,11 @@ public class MainActivity extends Activity implements DataListener {
 	        
 	        Gson gson = funfManager.getGson();
 	        locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
+	        activityProbe = gson.fromJson(new JsonObject(), ActivityProbe.class);
 	        pipeline = (BasicPipeline) funfManager.getRegisteredPipeline(PIPELINE_NAME);
 	        locationProbe.registerPassiveListener(MainActivity.this);
+	        activityProbe.registerPassiveListener(MainActivity.this);
 	        
-	        archiveButton.setEnabled(true);
 	        scanNowButton.setEnabled(true);
 	    }
 	    
@@ -63,32 +62,8 @@ public class MainActivity extends Activity implements DataListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		dataCountView = (TextView) findViewById(R.id.data_count);
-		
-		handler = new Handler();
-		// Runs an archive if pipeline is enabled
-	    archiveButton = (Button) findViewById(R.id.archive_button);
-	    archiveButton.setEnabled(false);
-	    archiveButton.setOnClickListener(new OnClickListener() {
-	        @Override
-	        public void onClick(View v) {
-	            if (pipeline.isEnabled()) {
-	                pipeline.onRun(BasicPipeline.ACTION_ARCHIVE, null);
-	              
-	                // Wait 1 second for archive to finish, then refresh the UI
-	                // (Note: this is kind of a hack since archiving is seamless and there are no messages when it occurs)
-	                handler.postDelayed(new Runnable() {
-	                    @Override
-	                    public void run() {
-	                        Toast.makeText(getBaseContext(), "Archived!", Toast.LENGTH_SHORT).show();
-	                        updateScanCount();
-	                    }
-	                }, 1000L);
-	            } else {
-	                Toast.makeText(getBaseContext(), "Pipeline is not enabled.", Toast.LENGTH_SHORT).show();
-	            }
-	        }
-	    });
+		locationText = (TextView) findViewById(R.id.loc_text);
+		activityText = (TextView) findViewById(R.id.activity_text);
 	    
 	 // Forces the pipeline to scan now
 	    scanNowButton = (Button) findViewById(R.id.scan_button);
@@ -99,6 +74,7 @@ public class MainActivity extends Activity implements DataListener {
 	            if (pipeline.isEnabled()) {
 	                // Manually register the pipeline
 	                locationProbe.registerListener(pipeline);
+	                activityProbe.registerListener(pipeline);
 	            } else {
 	                Toast.makeText(getBaseContext(), "Pipeline is not enabled.", Toast.LENGTH_SHORT).show();
 	            }
@@ -107,25 +83,7 @@ public class MainActivity extends Activity implements DataListener {
 	    
 	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
 	    
-	}
-	
-	private static final String TOTAL_COUNT_SQL = "SELECT count(*) FROM " + NameValueDatabaseHelper.DATA_TABLE.name;
-	/**
-	* Queries the database of the pipeline to determine how many rows of data we have recorded so far.
-	*/
-	private void updateScanCount() {
-	    // Query the pipeline db for the count of rows in the data table
-	    SQLiteDatabase db = pipeline.getDb();
-	    Cursor mcursor = db.rawQuery(TOTAL_COUNT_SQL, null);
-	    mcursor.moveToFirst();
-	    final int count = mcursor.getInt(0);
-	    // Update interface on main thread
-	    runOnUiThread(new Runnable() {
-	        @Override
-	        public void run() {
-	            dataCountView.setText("Data Count: " + count);
-	        }
-	    });
+	    Log.d("MainActivity", "Connected: " + servicesConnected());
 	}
 
 	@Override
@@ -138,13 +96,48 @@ public class MainActivity extends Activity implements DataListener {
 	@Override
 	public void onDataCompleted(IJsonObject arg0, JsonElement arg1) {
 		locationProbe.registerPassiveListener(this);
-		
+		activityProbe.registerPassiveListener(this);
 	}
 
 	@Override
-	public void onDataReceived(IJsonObject arg0, IJsonObject arg1) {
-		// TODO Auto-generated method stub
-		
+	public void onDataReceived(final IJsonObject arg0, final IJsonObject arg1) {
+		String type = arg0.get("@type").getAsString();
+		if (type.equals("edu.mit.media.funf.probe.builtin.SimpleLocationProbe")) {
+			final String networkType = arg1.get("mProvider").getAsString();
+			final String lat = arg1.get("mLatitude").getAsString();
+			final String lon = arg1.get("mLongitude").getAsString();
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					locationText.setText(networkType + ": " + lat + ", " + lon);
+				}
+			});
+		} else {
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					activityText.setText(arg1.get(ActivityProbe.ACTIVITY_NAME).getAsString());
+				}
+			});
+		}
 	}
+	
+    private boolean servicesConnected() {
+        // Check that Google Play services is available
+        int resultCode =
+                GooglePlayServicesUtil.
+                        isGooglePlayServicesAvailable(this);
+        // If Google Play services is available
+        if (ConnectionResult.SUCCESS == resultCode) {
+            // In debug mode, log the status
+            Log.d("Activity Recognition",
+                    "Google Play services is available.");
+            // Continue
+            return true;
+        // Google Play services was not available for some reason
+        } else {
+            return false;
+        }
+    }
 
 }
