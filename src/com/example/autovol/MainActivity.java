@@ -33,8 +33,9 @@ public class MainActivity extends Activity implements DataListener {
 	private BasicPipeline pipeline;
 	private SimpleLocationProbe locationProbe;
 	private ActivityProbe activityProbe;
+	private AudioProbe audioProbe;
 	private Button scanNowButton;
-	private TextView locationText, activityText;
+	private TextView locationText, activityText, audioText;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
 	    @Override
 	    public void onServiceConnected(ComponentName name, IBinder service) {
@@ -44,6 +45,7 @@ public class MainActivity extends Activity implements DataListener {
 	        Gson gson = funfManager.getGson();
 	        locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
 	        activityProbe = gson.fromJson(new JsonObject(), ActivityProbe.class);
+	        audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
 	        pipeline = (BasicPipeline) funfManager.getRegisteredPipeline(PIPELINE_NAME);
 	        locationProbe.registerPassiveListener(MainActivity.this);
 	        activityProbe.registerPassiveListener(MainActivity.this);
@@ -64,6 +66,7 @@ public class MainActivity extends Activity implements DataListener {
 		
 		locationText = (TextView) findViewById(R.id.loc_text);
 		activityText = (TextView) findViewById(R.id.activity_text);
+		audioText = (TextView) findViewById(R.id.audio_text);
 	    
 	 // Forces the pipeline to scan now
 	    scanNowButton = (Button) findViewById(R.id.scan_button);
@@ -75,6 +78,7 @@ public class MainActivity extends Activity implements DataListener {
 	                // Manually register the pipeline
 	                locationProbe.registerListener(pipeline);
 	                activityProbe.registerListener(pipeline);
+	                audioProbe.registerListener(pipeline);
 	            } else {
 	                Toast.makeText(getBaseContext(), "Pipeline is not enabled.", Toast.LENGTH_SHORT).show();
 	            }
@@ -94,14 +98,25 @@ public class MainActivity extends Activity implements DataListener {
 	}
 
 	@Override
-	public void onDataCompleted(IJsonObject arg0, JsonElement arg1) {
-		locationProbe.registerPassiveListener(this);
-		activityProbe.registerPassiveListener(this);
+	public void onDataCompleted(final IJsonObject arg0, final JsonElement arg1) {
+		String type = arg0.get("@type").getAsString();
+		Log.d("MainActivity", "data complete from " + type);
+		if (type.equals("edu.mit.media.funf.probe.builtin.SimpleLocationProbe")) {
+			Log.d("MainActivity", "LocationProbe completed");
+			locationProbe.registerPassiveListener(this);
+		} else if (type.equals("com.example.autovol.ActivityProbe")) {
+			Log.d("MainActivity", "ActivityProbe completed");
+			activityProbe.registerPassiveListener(this);
+		} else if (type.equals("com.example.autovol.AudioProbe")) {
+			Log.d("MainActivity", "AudioProbe completed");
+			audioProbe.unregisterListener(this);
+		}
 	}
 
 	@Override
 	public void onDataReceived(final IJsonObject arg0, final IJsonObject arg1) {
 		String type = arg0.get("@type").getAsString();
+		Log.d("MainActivity", "data received from " + type);
 		if (type.equals("edu.mit.media.funf.probe.builtin.SimpleLocationProbe")) {
 			final String networkType = arg1.get("mProvider").getAsString();
 			final String lat = arg1.get("mLatitude").getAsString();
@@ -112,11 +127,32 @@ public class MainActivity extends Activity implements DataListener {
 					locationText.setText(networkType + ": " + lat + ", " + lon);
 				}
 			});
-		} else {
+		} else if (type.equals("com.example.autovol.ActivityProbe")) {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
 					activityText.setText(arg1.get(ActivityProbe.ACTIVITY_NAME).getAsString());
+				}
+			});
+		} else if (type.equals("com.example.autovol.AudioProbe")) {
+			final int audioType = arg1.get(AudioProbe.AUDIO_TYPE).getAsInt();
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					switch (audioType) {
+					case AudioManager.AUDIO_SILENCE:
+						audioText.setText("silence");
+						break;
+					case AudioManager.AUDIO_NOISE:
+						audioText.setText("noise");
+						break;
+					case AudioManager.AUDIO_VOICE:
+						audioText.setText("voice");
+						break;
+					case AudioManager.AUDIO_ERROR:
+						audioText.setText("err");
+						break;
+					}
 				}
 			});
 		}

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
@@ -44,6 +45,7 @@ public class ActivityProbe extends Base implements PassiveProbe, ConnectionCallb
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			JsonObject data = new JsonObject();
+			Log.d("ActivityProbe", "Data received");
 			data.addProperty(ACTIVITY_NAME, intent.getStringExtra(ACTIVITY_NAME));
 			data.addProperty(ACTIVITY_TYPE, intent.getIntExtra(ACTIVITY_TYPE, 
 					DetectedActivity.UNKNOWN));

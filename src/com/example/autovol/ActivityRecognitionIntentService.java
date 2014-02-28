@@ -2,6 +2,7 @@ package com.example.autovol;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.util.Log;
 
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
@@ -39,12 +40,12 @@ public class ActivityRecognitionIntentService extends IntentService {
              * send it to an Activity or Service in a broadcast
              * Intent.
              */
-            
             Intent resultIntent = new Intent(ActivityProbe.BROADCAST_ACTION);
             resultIntent.putExtra(ActivityProbe.ACTIVITY_TYPE, activityType);
             resultIntent.putExtra(ActivityProbe.ACTIVITY_NAME, activityName);
             resultIntent.putExtra(ActivityProbe.CONFIDENCE, confidence);
             sendBroadcast(resultIntent);
+            Log.d("AcitivityRecognitionIntentService", "broadcast sent:" + activityName);
         }
 
 	}

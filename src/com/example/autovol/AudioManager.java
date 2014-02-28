@@ -1,32 +1,12 @@
 //package edu.dartmouthcs.mltoolkit.ServiceControllers.AudioLib;
 package com.example.autovol;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Calendar;
 
-import edu.dartmouthcs.UtilLibs.MyDataTypeConverter;
-import org.bewellapp.Ml_Toolkit_Application;
-import org.bewellapp.ServiceControllers.AudioLib.AudioFeatureReceiver;
-import org.bewellapp.ServiceControllers.AudioLib.AudioService;
-import org.bewellapp.Storage.ML_toolkit_object;
-
-import android.R.integer;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
-import android.media.MediaRecorder;
 import android.os.Handler;
 import android.util.Log;
 
@@ -37,35 +17,30 @@ public class AudioManager {
      * reconstruction needed STOPPED: reset needed
      */
     public enum State {
-	INITIALIZING, READY, RECORDING, ERROR, STOPPED
+    	INITIALIZING, READY, RECORDING, ERROR, STOPPED
     };
-
-    public static final boolean RECORDING_UNCOMPRESSED = true;
-    public static final boolean RECORDING_COMPRESSED = false;
     
-    // The interval in which the recorded samples are output to the file
-    // Used only in uncompressed mode
-    private static final int TIMER_INTERVAL = 120;
-
-    // Toggles uncompressed recording on/off; RECORDING_UNCOMPRESSED /
-    // RECORDING_COMPRESSED
-    private boolean rUncompressed;
+    public static final int AUDIO_SILENCE = 0;
+    public static final int AUDIO_NOISE = 1;
+    public static final int AUDIO_VOICE = 2;
+    public static final int AUDIO_ERROR = 3;
+    
 
     // Recorder used for uncompressed recording
     private AudioRecord aRecorder = null;
-    // Recorder used for compressed recording
-    private MediaRecorder mRecorder = null;
-
+    
+    private int[] votes;
+ 
     // Stores current amplitude (only in uncompressed mode)
     private int cAmplitude = 0;
-    // Output file path
-    private String fPath = null;
 
     // Recorder state; see State
     private State state;
+    
+    private Context context;
 
     static {
-	System.loadLibrary("computeFeatures");
+    	System.loadLibrary("computeFeatures");
     }
 
     // Number of channels, sample rate, sample size(size in bits), buffer size,
@@ -107,7 +82,6 @@ public class AudioManager {
     // the wave file
     private int payloadSize;
     private int updateFlag;
-    private AudioService ASobj;
 
     // audio feature options
     private final int FRAME_SIZE_MULTIPLIER = 8;
@@ -199,17 +173,10 @@ public class AudioManager {
 
     private native void audioFeatureExtractionDestroy();
 
-    // send notification
-    Notification notification;
-    NotificationManager mNotificationManager;
-
     private String dataString;
 
     private int audioEnergy;
 
-    // debug
-    private int noOfPoints = 0;
-    public ML_toolkit_object AudioObject;
 
     /**
      * 
@@ -233,18 +200,8 @@ public class AudioManager {
 	CircularBufferFeatExtractionInference<AudioData> obj;
 	double[] audioFrameFeature;
 	double[] audioWindowFeature;
-	private FileOutputStream fOut;
-	private OutputStreamWriter osw;
-	private int writeCounter = 0;
-	private String dataString;
-	private volatile Thread blinker;
 
-	// for debug code
-	private FileInputStream fIn;// = new
-				    // FileOutputStream("/sdcard/priv_audio.txt");
-	private BufferedReader br;// = new BufferedReader(new
-				  // InputStreamReader(in));
-	private String inputStr;
+	private volatile Thread blinker;
 
 	public MyQueuePopper(
 		CircularBufferFeatExtractionInference<AudioData> obj) {
@@ -282,6 +239,7 @@ public class AudioManager {
 	public void start() {
 	    blinker = new Thread(this);
 	    blinker.start();
+	    votes = new int[4];
 	}
 
 	private void getFrameInference(int idx)
@@ -342,7 +300,6 @@ public class AudioManager {
 	
 	@Override
 	public void run() {
-	    double[] tempFeatures;
 	    Thread thisThread = Thread.currentThread();
 	    while (blinker == thisThread) {
 		audioFromQueueData = obj.deleteAndHandleData();
@@ -360,10 +317,7 @@ public class AudioManager {
 
     }
 
-    private final int AUDIO_SILENCE = 0;
-    private final int AUDIO_NOISE = 1;
-    private final int AUDIO_VOICE = 2;
-    //private final int AUDIO_ERROR = 3;
+
     private final double silenceThreshold = 1e8;
     private final int smooth_window = 60;	//80 for 1s
     private int[] cir_inference = new int[smooth_window];
@@ -407,32 +361,57 @@ public class AudioManager {
 	    return AUDIO_VOICE;
 	}
     }
-    private void saveAudioInference(int inference_int, long ts, int sync_id)
-    {
-	appState.amount_of_different_all_voice_activities++;
-	switch(inference_int)
-	{
-	case 0:
-	    appState.audio_inference = "silence";
-	    appState.amount_of_different_voice_activity[0]++;
-	    break;
-	case 1:
-	    appState.audio_inference = "noise";
-	    appState.amount_of_different_voice_activity[1]++;
-	    break;
-	case 2:
-	    appState.audio_inference = "voice";
-	    appState.amount_of_different_voice_activity[2]++;
-	    break;
-	case 3:
-	    appState.audio_inference = "error";
-	    appState.amount_of_different_voice_activity[3]++;
-	    break;
-	}
-	ML_toolkit_object audio_inference = appState.mMlToolkitObjectPool
-		.borrowObject().setValues(ts, 5, true,
-			appState.audio_inference, sync_id);
-	appState.ML_toolkit_buffer.insert(audio_inference);
+    
+    // TODO
+    private void saveAudioInference(int inference_int, long ts, int sync_id) {
+    	/*
+    	Intent resultIntent = new Intent(AudioProbe.BROADCAST_ACTION);
+    	resultIntent.putExtra(AudioProbe.AUDIO_TYPE, inference_int);
+    	context.sendBroadcast(resultIntent);
+    	*/
+    	votes[inference_int]++;
+    	/*
+		appState.amount_of_different_all_voice_activities++;
+		switch(inference_int)
+		{
+		case 0:
+		    appState.audio_inference = "silence";
+		    appState.amount_of_different_voice_activity[0]++;
+		    break;
+		case 1:
+		    appState.audio_inference = "noise";
+		    appState.amount_of_different_voice_activity[1]++;
+		    break;
+		case 2:
+		    appState.audio_inference = "voice";
+		    appState.amount_of_different_voice_activity[2]++;
+		    break;
+		case 3:
+		    appState.audio_inference = "error";
+		    appState.amount_of_different_voice_activity[3]++;
+		    break;
+		}
+		ML_toolkit_object audio_inference = appState.mMlToolkitObjectPool
+			.borrowObject().setValues(ts, 5, true,
+				appState.audio_inference, sync_id);
+		appState.ML_toolkit_buffer.insert(audio_inference);
+		*/
+    }
+    
+    public int getLastInference() {
+    	if (votes == null) {
+    		return AUDIO_ERROR;
+    	}
+    	int maxVal = votes[0];
+    	int maxIndex = 0;
+    	for (int i = 0; i < votes.length; i++) {
+    		if (votes[i] >= maxVal) {
+    			maxVal = votes[i];
+    			maxIndex = i;
+    		}
+    	}
+    	
+    	return maxIndex;
     }
 
     private MyQueuePopper myQueuePopper;
@@ -474,10 +453,7 @@ public class AudioManager {
 
 		payloadSize += buffer.length;
 		updateFlag++;
-		appState.audio_no_of_records = payloadSize;
-		if (updateFlag % 28125 == 0) {
-		    ASobj.updateNotificationArea();
-		}
+
 	    } else {
 		// no new data will be inserted at this stage
 		// so we will activate the freeCMemory thread
@@ -514,89 +490,11 @@ public class AudioManager {
 	return inCoversation;
     }
     
-    // start and end time of conversation get set here
-    private Runnable mUpdateTimeTask = new Runnable() {
-	public void run() {
-	    final double start_threshold = 600;
-	    final double stop_threshold = 400;
-	    Log.e("CurrentStat", "" + sumOfPreviousInferences + "," + start_threshold);// here
-									   // 600
-									   // is
-									   // the
-									   // threshold
-
-	    if(!recordingStopped && System.currentTimeMillis() - lastFrameTimeStamp > 5 * 1000)
-	    {
-	        Log.e("audio_stopped", "no audio frames in 1000ms, restart");
-	        restartRecording();
-	    }
-	    // this code every 10 seconds look how much conversation is present
-	    // in the last minute (or minuteToLookBackForPopup)
-
-	    if (sumOfPreviousInferences > start_threshold)// 2*thresholdForConversation)
-	    {
-		if (inCoversation == false) {// then we are going from
-					     // non-conversation to conversation
-		    conversationStartTime = System.currentTimeMillis() - 10 * 1000; // go
-										    // back
-										    // 10
-										    // seconds
-										    // to
-										    // set
-										    // an
-										    // optimistic
-										    // bound
-										    // about
-										    // conversation
-		    inCoversation = true;
-		    conversationIntentSent = false;// means send it next time
-		    Log.e("CurrentStat", "Starting a conversation");
-		    appState.convo_inference = "in a converstion";
-		}
-	    } else if (sumOfPreviousInferences < stop_threshold)// thresholdForConversation)
-						     // //conversation finished
-	    {
-		inCoversation = false;
-		if (conversationIntentSent == false)// I want to send only when
-						    // previous call was in
-						    // conversation. This
-						    // happens when a
-						    // conversation ends.
-		{
-		    // Log.e("CurrentSum From Timer","Intent Sent");
-		    conversationIntentSent = true;
-		    // vibrateNotification();
-
-		    conversationEndTime = System.currentTimeMillis();
-		    Log.e("CurrentStat", "Finished a conversation");
-		    appState.convo_inference = "not in a converstion";
-		    sendConversationInfo(conversationStartTime,
-			    conversationEndTime);
-		    // appState.lastConversationStartTime =
-		    // conversationStartTime;
-		    // appState.lastConversationEndTime =
-		    // System.currentTimeMillis();
-		}
-
-	    }
-
-	    mHandler.removeCallbacks(mUpdateTimeTask);
-	    mHandler.postDelayed(mUpdateTimeTask, rateNotification);
-	}
-    };
 
     // /////////////////////////////////////////////////////////////
     // ////////// Conversation detection codes:end /////////////
     // ////////////////////////////////////////////////////////////
 
-    protected void sendConversationInfo(long start_ts, long finish_ts) {
-	Intent intent = new Intent(AudioFeatureReceiver.class.getName());
-	intent.putExtra("start_timestamp", start_ts);
-	intent.putExtra("finish_timestamp", finish_ts);
-	ASobj.sendBroadcast(intent);
-    }
-
-    private Ml_Toolkit_Application appState;
 
     /**
      * 
@@ -608,14 +506,9 @@ public class AudioManager {
      * but the state is set to ERROR
      * 
      */
-    public AudioManager(Ml_Toolkit_Application apppState, AudioService obj,
-	    boolean uncompressed, int audioSource, int sampleRate,
+    public AudioManager(int audioSource, int sampleRate,
 	    int channelConfig, int audioFormat) {
-	this.ASobj = obj;
-	this.appState = apppState;
 	try {
-	    rUncompressed = uncompressed;
-	    if (rUncompressed) { // RECORDING_UNCOMPRESSED
 
 		if (audioFormat == AudioFormat.ENCODING_PCM_16BIT) {
 		    bSamples = 16;
@@ -623,7 +516,7 @@ public class AudioManager {
 		    bSamples = 8;
 		}
 
-		if (channelConfig == AudioFormat.CHANNEL_CONFIGURATION_MONO) {
+		if (channelConfig == AudioFormat.CHANNEL_IN_MONO) {
 		    nChannels = 1;
 		} else {
 		    nChannels = 2;
@@ -688,19 +581,7 @@ public class AudioManager {
 		// found then we will not send intent.
 		conversationIntentSent = true;
 
-		// timer for conversation decision
-		mHandler.removeCallbacks(mUpdateTimeTask);
-		mHandler.postDelayed(mUpdateTimeTask, rateNotification);
-
-	    } else { // RECORDING_COMPRESSED
-		     // not used
-		mRecorder = new MediaRecorder();
-		mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-		mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-		mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-	    }
 	    cAmplitude = 0;
-	    fPath = null;
 	    state = State.INITIALIZING;
 	} catch (Exception e) {
 	    if (e.getMessage() != null) {
@@ -713,57 +594,6 @@ public class AudioManager {
 	}
     }
 
-    /**
-     * Sets output file path, call directly after construction/reset.
-     * 
-     * @param output
-     *            file path
-     * 
-     */
-    public void setOutputFile(String argPath) {
-	try {
-	    if (state == State.INITIALIZING) {
-		fPath = argPath;
-		if (!rUncompressed) {
-		    mRecorder.setOutputFile(fPath);
-		}
-	    }
-	} catch (Exception e) {
-	    if (e.getMessage() != null) {
-		Log.e(AudioManager.class.getName(), e.getMessage());
-	    } else {
-		Log.e(AudioManager.class.getName(),
-			"Unknown error occured while setting output path");
-	    }
-	    state = State.ERROR;
-	}
-    }
-
-    /**
-     * 
-     * Returns the largest amplitude sampled since the last call to this method.
-     * 
-     * @return returns the largest amplitude since the last call, or 0 when not
-     *         in recording state.
-     * 
-     */
-    public int getMaxAmplitude() {
-	if (state == State.RECORDING) {
-	    if (rUncompressed) {
-		int result = cAmplitude;
-		cAmplitude = 0;
-		return result;
-	    } else {
-		try {
-		    return mRecorder.getMaxAmplitude();
-		} catch (IllegalStateException e) {
-		    return 0;
-		}
-	    }
-	} else {
-	    return 0;
-	}
-    }
 
     /**
      * 
@@ -777,9 +607,7 @@ public class AudioManager {
     public void prepare() {
 	try {
 	    if (state == State.INITIALIZING) {
-		if (rUncompressed) {
-		    if ((aRecorder.getState() == AudioRecord.STATE_INITIALIZED)
-			    & (fPath != null)) {
+		    if ((aRecorder.getState() == AudioRecord.STATE_INITIALIZED)) {
 			buffer = new short[framePeriod * bSamples / 16
 				* nChannels];
 			state = State.READY;
@@ -788,10 +616,7 @@ public class AudioManager {
 				"prepare() method called on uninitialized recorder");
 			state = State.ERROR;
 		    }
-		} else {
-		    mRecorder.prepare();
-		    state = State.READY;
-		}
+
 	    } else {
 		Log.e(AudioManager.class.getName(),
 			"prepare() method called on illegal state");
@@ -825,13 +650,7 @@ public class AudioManager {
 
 	    stop();
 
-	} else {
-	    if ((state == State.READY) & (rUncompressed)) {
-		(new File(fPath)).delete();
-	    }
-	}
-
-	if (rUncompressed) {
+	} 
 	    if (aRecorder != null) {
 		aRecorder.release();
 
@@ -839,22 +658,10 @@ public class AudioManager {
 		// aRecorder = null;
 
 		// audioFeatureExtractionDestroy();
-		// stop the timer.
-		mHandler.removeCallbacks(mUpdateTimeTask);
-		if(inCoversation) {
-		    conversationEndTime = System.currentTimeMillis();
-            Log.e("AudioManager", "Finished a conversation due to release()");
 
-            sendConversationInfo(conversationStartTime,
-                conversationEndTime);
-		}
-	    }
-	} else {
-	    if (mRecorder != null) {
-		mRecorder.release();
 
 	    }
-	}
+
     }
 
     /**
@@ -869,19 +676,10 @@ public class AudioManager {
 	try {
 	    if (state != State.ERROR) {
 		release();
-		fPath = null; // Reset file path
 		cAmplitude = 0; // Reset amplitude
-		if (rUncompressed) {
-		    aRecorder = new AudioRecord(aSource, sRate, nChannels + 1,
+
+		aRecorder = new AudioRecord(aSource, sRate, nChannels + 1,
 			    aFormat, bufferSize);
-		} else {
-		    mRecorder = new MediaRecorder();
-		    mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-		    mRecorder
-			    .setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-		    mRecorder
-			    .setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-		}
 		state = State.INITIALIZING;
 	    }
 	} catch (Exception e) {
@@ -897,18 +695,17 @@ public class AudioManager {
      * prepare().
      * 
      */
-    public void start() {
+    public void start(Context context) {
+    	this.context = context;
 	if (state == State.READY) {
-	    if (rUncompressed) {
+
 		payloadSize = 0;
 		audioFeatureExtractionInit();
 		aRecorder.startRecording();
 		aRecorder.read(buffer, 0, buffer.length);
 		recordingStopped = false;
 		freeCMemoryActivated = false;
-	    } else {
-		mRecorder.start();
-	    }
+
 	    state = State.RECORDING;
 	} else {
 	    Log.e(AudioManager.class.getName(),
@@ -929,11 +726,9 @@ public class AudioManager {
      */
     public void stop() {
 	if (state == State.RECORDING) {
-	    if (rUncompressed) {
+
 		aRecorder.stop();
-	    } else {
-		mRecorder.stop();
-	    }
+
 	    audioFeatureExtractionDestroy();
 	    
 	    state = State.STOPPED;

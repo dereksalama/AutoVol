@@ -10,7 +10,8 @@
          "version":1,
          "data":[
             "edu.mit.media.funf.probe.builtin.LocationProbe",
-            "com.example.autovol.ActivityProbe"
+            "com.example.autovol.ActivityProbe",
+            "com.example.autovol.AudioProbe"
          ]
         }</string>
     <string name="title_activity_main">MainActivity</string>
