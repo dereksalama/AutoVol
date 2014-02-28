@@ -16,9 +16,9 @@ import com.google.android.gms.location.DetectedActivity;
 import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.probe.Probe.Base;
-import edu.mit.media.funf.probe.Probe.PassiveProbe;
+import edu.mit.media.funf.probe.Probe.ContinuousProbe;
 
-public class ActivityProbe extends Base implements PassiveProbe, ConnectionCallbacks, OnConnectionFailedListener {
+public class ActivityProbe extends Base implements ContinuousProbe, ConnectionCallbacks, OnConnectionFailedListener {
 	
     // Constants that define the activity detection interval
     public static final int MILLISECONDS_PER_SECOND = 1000;
@@ -74,12 +74,14 @@ public class ActivityProbe extends Base implements PassiveProbe, ConnectionCallb
              * preset detection interval and PendingIntent.
              * This call is synchronous.
              */
+        	Log.d("ActivityProbe", "Starting to request updates");
             mActivityRecognitionClient.requestActivityUpdates(
                     DETECTION_INTERVAL_MILLISECONDS,
                     mActivityRecognitionPendingIntent);
             break;
         
         	case STOP :
+        	Log.d("AcitivityProbe", "Stopping updates");
             mActivityRecognitionClient.removeActivityUpdates(
                     mActivityRecognitionPendingIntent);
             break;        	
@@ -114,6 +116,7 @@ public class ActivityProbe extends Base implements PassiveProbe, ConnectionCallb
 	@Override
     protected void onEnable() {
 		super.onEnable();
+		Log.d("ActivityProbe", "enabled");
         /*
          * Instantiate a new activity recognition client. Since the
          * parent Activity implements the connection listener and
@@ -181,6 +184,7 @@ public class ActivityProbe extends Base implements PassiveProbe, ConnectionCallb
 	@Override
     protected void onDisable() {
 		super.onDisable();
+		Log.d("ActivityProbe", "disabled");
 		// Set the request type to STOP
         mRequestType = REQUEST_TYPE.STOP;
         

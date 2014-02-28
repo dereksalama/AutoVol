@@ -1,5 +1,9 @@
 package com.example.autovol;
 
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -21,6 +25,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.FunfManager;
+import edu.mit.media.funf.Schedule;
 import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.pipeline.BasicPipeline;
 import edu.mit.media.funf.probe.Probe.DataListener;
@@ -51,6 +56,9 @@ public class MainActivity extends Activity implements DataListener {
 	        activityProbe.registerPassiveListener(MainActivity.this);
 	        
 	        scanNowButton.setEnabled(true);
+	        
+		    Map<String, Schedule> sched = pipeline.getSchedules();
+		    Log.d("MainActivity", "sched: " + sched);
 	    }
 	    
 	    @Override
@@ -71,14 +79,22 @@ public class MainActivity extends Activity implements DataListener {
 	 // Forces the pipeline to scan now
 	    scanNowButton = (Button) findViewById(R.id.scan_button);
 	    scanNowButton.setEnabled(false);
+
 	    scanNowButton.setOnClickListener(new OnClickListener() {
 	        @Override
 	        public void onClick(View v) {
 	            if (pipeline.isEnabled()) {
 	                // Manually register the pipeline
-	                locationProbe.registerListener(pipeline);
-	                activityProbe.registerListener(pipeline);
 	                audioProbe.registerListener(pipeline);
+	                
+	                //TODO: remove this
+	                Executors.newScheduledThreadPool(1).schedule(new Runnable() {
+	                	@Override
+	                	public void run() {
+	                		audioProbe.onStop();
+	                	}
+	                	
+	                }, 20, TimeUnit.SECONDS);
 	            } else {
 	                Toast.makeText(getBaseContext(), "Pipeline is not enabled.", Toast.LENGTH_SHORT).show();
 	            }
@@ -109,7 +125,6 @@ public class MainActivity extends Activity implements DataListener {
 			activityProbe.registerPassiveListener(this);
 		} else if (type.equals("com.example.autovol.AudioProbe")) {
 			Log.d("MainActivity", "AudioProbe completed");
-			audioProbe.unregisterListener(this);
 		}
 	}
 

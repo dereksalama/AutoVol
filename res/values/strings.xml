@@ -7,11 +7,17 @@
     <string name="default_pipeline">
         {"@type":"edu.mit.media.funf.pipeline.BasicPipeline",
          "name":"default",
-         "version":1,
+         "version":2,
          "data":[
-            "edu.mit.media.funf.probe.builtin.LocationProbe",
-            "com.example.autovol.ActivityProbe",
-            "com.example.autovol.AudioProbe"
+            {"@type": "edu.mit.media.funf.probe.builtin.LocationProbe",
+             "@schedule": {"interval": 600 },
+             "goodEnoughAccuracy": 80,
+             "maxWaitTime": 60
+            },
+            {"@type": "com.example.autovol.ActivityProbe"},
+            {"@type": "com.example.autovol.AudioProbe",
+             "@schdeudle": {"interval": 300, "duration": 20 }
+            }
          ]
         }</string>
     <string name="title_activity_main">MainActivity</string>

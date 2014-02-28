@@ -1,7 +1,7 @@
 package com.example.autovol;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import android.media.AudioFormat;
 import android.util.Log;
@@ -9,44 +9,14 @@ import android.util.Log;
 import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.probe.Probe.Base;
-import edu.mit.media.funf.probe.Probe.ContinuousProbe;
 
-public class AudioProbe extends Base implements ContinuousProbe {
+public class AudioProbe extends Base {
 	
 	private AudioManager audioManager;
-	private static final int LISTEN_SECONDS = 20;
-	private final Thread audioThread = new Thread() {
-		
-		@Override
-		public void run() {
-			audioManager.prepare();
-			audioManager.start(getContext());
-		}
-		
-	};
+	
+	private final ExecutorService executor = Executors.newSingleThreadExecutor();
 	
 	public static final String AUDIO_TYPE = "audio_type";
-	
-	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-	
-	private final Runnable stopRecording = new Runnable() {
-
-		@Override
-		public void run() {
-			if (audioManager == null) {
-				//was disabled before this happened
-				return;
-			}
-			audioManager.stopRecording();
-			int inference = audioManager.getLastInference();
-			JsonObject data = new JsonObject();
-			data.addProperty(AUDIO_TYPE, inference);
-			sendData(data);
-			audioManager.reset();
-			Log.d("AudioProbe", "data received: " + inference);
-		}
-		
-	};
 
 	
     /**
@@ -59,6 +29,7 @@ public class AudioProbe extends Base implements ContinuousProbe {
 	@Override
     protected void onEnable() {
 		super.onEnable();
+		Log.d("AudioProbe", "enabled");
 		audioManager = new AudioManager(android.media.MediaRecorder.AudioSource.MIC, 
 				/*8000*/ 44100, AudioFormat.CHANNEL_IN_MONO,
 				AudioFormat.ENCODING_PCM_16BIT);
@@ -75,9 +46,17 @@ public class AudioProbe extends Base implements ContinuousProbe {
 	@Override
     protected void onStart() {
 		super.onStart();
-		audioThread.run();
-		//scheduler.schedule(stopRecording, 1, TimeUnit.MINUTES);
-		getHandler().postDelayed(stopRecording, LISTEN_SECONDS * 1000);
+		Runnable r = new Runnable() {
+			
+			@Override
+			public void run() {
+				Log.d("AudioProbe", "Audio runnable run");
+				audioManager.prepare();
+				audioManager.start(getContext());
+			}
+			
+		};
+		executor.submit(r);
     }
 
     /**
@@ -89,7 +68,18 @@ public class AudioProbe extends Base implements ContinuousProbe {
 	@Override
     protected void onStop() {
 		super.onStop();
-		audioThread.interrupt();
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				audioManager.stopRecording();
+			}
+		});
+		int inference = audioManager.getLastInference();
+		audioManager.reset();
+		JsonObject data = new JsonObject();
+		data.addProperty(AUDIO_TYPE, inference);
+		sendData(data);
+		Log.d("AudioProbe", "Stopped, inference: " + inference);
     }
 
     /**
