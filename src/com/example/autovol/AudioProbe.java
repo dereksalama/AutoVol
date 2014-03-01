@@ -1,7 +1,8 @@
 package com.example.autovol;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import android.media.AudioFormat;
 import android.util.Log;
@@ -14,9 +15,39 @@ public class AudioProbe extends Base {
 	
 	private AudioManager audioManager;
 	
-	private final ExecutorService executor = Executors.newSingleThreadExecutor();
+	private ScheduledExecutorService executor;
 	
 	public static final String AUDIO_TYPE = "audio_type";
+	private static final int RUN_TIME = 20;
+	private static final int PAUSE_TIME = 5 * 60 - 20;
+	private volatile boolean recording = false;
+	
+	private final Runnable startRecording = new Runnable() {
+		@Override
+		public void run() {
+			audioManager.prepare();
+			//audioManager.startRecording();
+			audioManager.start();
+			recording = true;
+			executor.schedule(stopRecording, RUN_TIME, TimeUnit.SECONDS);
+		}
+	};
+	
+	private final Runnable stopRecording = new Runnable() {
+		@Override
+		public void run() {
+			audioManager.stopRecording();
+			recording = false;
+			int inference = audioManager.getLastInference();
+			audioManager.reset();
+			
+			JsonObject data = new JsonObject();
+			data.addProperty(AUDIO_TYPE, inference);
+			sendData(data);
+			Log.d("AudioProbe", "Stopped, inference: " + inference);
+			executor.schedule(startRecording, PAUSE_TIME, TimeUnit.SECONDS);
+		}
+	};
 
 	
     /**
@@ -46,17 +77,8 @@ public class AudioProbe extends Base {
 	@Override
     protected void onStart() {
 		super.onStart();
-		Runnable r = new Runnable() {
-			
-			@Override
-			public void run() {
-				Log.d("AudioProbe", "Audio runnable run");
-				audioManager.prepare();
-				audioManager.start(getContext());
-			}
-			
-		};
-		executor.submit(r);
+		executor = Executors.newScheduledThreadPool(1);
+		executor.submit(startRecording);
     }
 
     /**
@@ -68,18 +90,12 @@ public class AudioProbe extends Base {
 	@Override
     protected void onStop() {
 		super.onStop();
-		executor.execute(new Runnable() {
-			@Override
-			public void run() {
-				audioManager.stopRecording();
-			}
-		});
-		int inference = audioManager.getLastInference();
-		audioManager.reset();
-		JsonObject data = new JsonObject();
-		data.addProperty(AUDIO_TYPE, inference);
-		sendData(data);
-		Log.d("AudioProbe", "Stopped, inference: " + inference);
+		if (recording) {
+			executor.shutdownNow();
+		} else {
+			executor.shutdown();
+		}
+
     }
 
     /**

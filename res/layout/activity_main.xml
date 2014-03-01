@@ -45,4 +45,13 @@
         android:text="Audio"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
+    <Button
+        android:id="@+id/stop_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/scan_button"
+        android:layout_alignBottom="@+id/scan_button"
+        android:layout_toRightOf="@+id/activity_text"
+        android:text="Stop" />
+
 </RelativeLayout>

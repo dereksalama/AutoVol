@@ -1,9 +1,5 @@
 package com.example.autovol;
 
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -25,7 +21,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.FunfManager;
-import edu.mit.media.funf.Schedule;
 import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.pipeline.BasicPipeline;
 import edu.mit.media.funf.probe.Probe.DataListener;
@@ -46,19 +41,19 @@ public class MainActivity extends Activity implements DataListener {
 	    public void onServiceConnected(ComponentName name, IBinder service) {
 	        funfManager = ((FunfManager.LocalBinder)service).getManager();
 	        funfManager.enablePipeline(PIPELINE_NAME);
+	        pipeline = (BasicPipeline) funfManager.getRegisteredPipeline(PIPELINE_NAME);
+	        funfManager.enablePipeline(PIPELINE_NAME);
 	        
 	        Gson gson = funfManager.getGson();
 	        locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
 	        activityProbe = gson.fromJson(new JsonObject(), ActivityProbe.class);
 	        audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
-	        pipeline = (BasicPipeline) funfManager.getRegisteredPipeline(PIPELINE_NAME);
+
 	        locationProbe.registerPassiveListener(MainActivity.this);
 	        activityProbe.registerPassiveListener(MainActivity.this);
+	        audioProbe.registerPassiveListener(MainActivity.this);
 	        
 	        scanNowButton.setEnabled(true);
-	        
-		    Map<String, Schedule> sched = pipeline.getSchedules();
-		    Log.d("MainActivity", "sched: " + sched);
 	    }
 	    
 	    @Override
@@ -84,17 +79,20 @@ public class MainActivity extends Activity implements DataListener {
 	        @Override
 	        public void onClick(View v) {
 	            if (pipeline.isEnabled()) {
-	                // Manually register the pipeline
-	                audioProbe.registerListener(pipeline);
-	                
-	                //TODO: remove this
-	                Executors.newScheduledThreadPool(1).schedule(new Runnable() {
-	                	@Override
-	                	public void run() {
-	                		audioProbe.onStop();
-	                	}
-	                	
-	                }, 20, TimeUnit.SECONDS);
+	                audioProbe.registerListener(MainActivity.this);
+	            } else {
+	                Toast.makeText(getBaseContext(), "Pipeline is not enabled.", Toast.LENGTH_SHORT).show();
+	            }
+	        }
+	    });
+	    
+	    Button stopButton = (Button) findViewById(R.id.stop_button);
+
+	    stopButton.setOnClickListener(new OnClickListener() {
+	        @Override
+	        public void onClick(View v) {
+	            if (pipeline.isEnabled()) {
+	                audioProbe.unregisterListener(MainActivity.this);
 	            } else {
 	                Toast.makeText(getBaseContext(), "Pipeline is not enabled.", Toast.LENGTH_SHORT).show();
 	            }

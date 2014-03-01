@@ -36,8 +36,6 @@ public class AudioManager {
 
     // Recorder state; see State
     private State state;
-    
-    private Context context;
 
     static {
     	System.loadLibrary("computeFeatures");
@@ -239,7 +237,6 @@ public class AudioManager {
 	public void start() {
 	    blinker = new Thread(this);
 	    blinker.start();
-	    votes = new int[4];
 	}
 
 	private void getFrameInference(int idx)
@@ -324,42 +321,42 @@ public class AudioManager {
     private int smooth_idx=0;
     
     private void recordAudioInference(double[] extractedFeatures, long ts, int sync_id) {
-	int inferent_int = (int)extractedFeatures[8];
+		int inferent_int = (int)extractedFeatures[8];
+		
+		if (inferent_int == 1) {
+		    cir_inference[smooth_idx] = AUDIO_VOICE;
+		} else if(extractedFeatures[5] < silenceThreshold) {
+		    cir_inference[smooth_idx] = AUDIO_SILENCE;
+		} else {
+		    cir_inference[smooth_idx] = AUDIO_NOISE;
+		}
 	
-	if (inferent_int == 1) {
-	    cir_inference[smooth_idx] = AUDIO_VOICE;
-	} else if(extractedFeatures[5] < silenceThreshold) {
-	    cir_inference[smooth_idx] = AUDIO_SILENCE;
-	} else {
-	    cir_inference[smooth_idx] = AUDIO_NOISE;
+		smooth_idx++;
+		if(smooth_idx == smooth_window)	{
+		   inferent_int = getSmoothedInference();
+		   //Log.e("audio_vote","audio inference="+inferent_int);
+		   saveAudioInference(inferent_int, ts,sync_id);
+		   smooth_idx=0;
+		}
 	}
-
-	smooth_idx++;
-	if(smooth_idx == smooth_window)	{
-	   inferent_int = getSmoothedInference();
-	   //Log.e("audio_vote","audio inference="+inferent_int);
-	   saveAudioInference(inferent_int, ts,sync_id);
-	   smooth_idx=0;
-	}
-    }
-    
+	    
     private int getSmoothedInference()
-    {
-	int[] vote = new int[3];
-	for(int i=0;i<smooth_window;i++) {
-	    vote[cir_inference[i]]++;
-	}
-	
-	//Log.e("audio_vote",vote[AUDIO_SILENCE]+" "+vote[AUDIO_NOISE]+" "+vote[AUDIO_VOICE]);
-	if(vote[AUDIO_SILENCE] * 0.5 > vote[AUDIO_NOISE] + vote[AUDIO_VOICE])
-	{
-	    return AUDIO_SILENCE;
-	} else if(vote[AUDIO_NOISE] * 0.8 > vote[AUDIO_VOICE])
-	{
-	    return AUDIO_NOISE;
-	} else {
-	    return AUDIO_VOICE;
-	}
+	    {
+		int[] vote = new int[3];
+		for(int i=0;i<smooth_window;i++) {
+		    vote[cir_inference[i]]++;
+		}
+		
+		//Log.e("audio_vote",vote[AUDIO_SILENCE]+" "+vote[AUDIO_NOISE]+" "+vote[AUDIO_VOICE]);
+		if(vote[AUDIO_SILENCE] * 0.5 > vote[AUDIO_NOISE] + vote[AUDIO_VOICE])
+		{
+		    return AUDIO_SILENCE;
+		} else if(vote[AUDIO_NOISE] * 0.8 > vote[AUDIO_VOICE])
+		{
+		    return AUDIO_NOISE;
+		} else {
+		    return AUDIO_VOICE;
+		}
     }
     
     // TODO
@@ -607,6 +604,7 @@ public class AudioManager {
     public void prepare() {
 	try {
 	    if (state == State.INITIALIZING) {
+	    	votes = new int[4];
 		    if ((aRecorder.getState() == AudioRecord.STATE_INITIALIZED)) {
 			buffer = new short[framePeriod * bSamples / 16
 				* nChannels];
@@ -695,25 +693,40 @@ public class AudioManager {
      * prepare().
      * 
      */
-    public void start(Context context) {
-    	this.context = context;
-	if (state == State.READY) {
-
-		payloadSize = 0;
-		audioFeatureExtractionInit();
-		aRecorder.startRecording();
-		aRecorder.read(buffer, 0, buffer.length);
-		recordingStopped = false;
-		freeCMemoryActivated = false;
-
-	    state = State.RECORDING;
-	} else {
-	    Log.e(AudioManager.class.getName(),
-		    "start() called on illegal state");
-	    state = State.ERROR;
-	}
+    public void start() {
+		if (state == State.READY) {
 	
-	Log.d("AudioManager", "start");
+			payloadSize = 0;
+			audioFeatureExtractionInit();
+			aRecorder.startRecording();
+			aRecorder.read(buffer, 0, buffer.length);
+			recordingStopped = false;
+			freeCMemoryActivated = false;
+	
+		    state = State.RECORDING;
+		} else {
+		    Log.e(AudioManager.class.getName(),
+			    "start() called on illegal state");
+		    state = State.ERROR;
+		}
+		
+		Log.d("AudioManager", "start");
+    }
+    
+    public void startRecording() {
+		synchronized(this) {
+			try {
+			    if(state == State.STOPPED) {
+					aRecorder.startRecording();
+					state = State.RECORDING;
+					recordingStopped = false;
+					aRecorder.read(buffer, 0, buffer.length);
+			    }
+			} catch (IllegalStateException ex) {
+			    Log.e("AudioManager", "startRecording throws" + ex.toString());
+			}
+		}
+	    Log.d("AudioManager", "startRecording");
     }
 
     /**
@@ -778,21 +791,7 @@ public class AudioManager {
 	Log.d("AudioManager", "stopRecording");
     }
 
-    public void startRecording() {
-	synchronized(this) {
-	try {
-	    if(state == State.STOPPED) {
-		aRecorder.startRecording();
-		state = State.RECORDING;
-		recordingStopped = false;
-		aRecorder.read(buffer, 0, buffer.length);
-	    }
-	} catch (IllegalStateException ex) {
-	    Log.e("AudioManager", "startRecording throws" + ex.toString());
-	}
-	}
-    Log.d("AudioManager", "startRecording");
-    }
+
 
     /*
      * 

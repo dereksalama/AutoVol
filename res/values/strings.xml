@@ -7,17 +7,31 @@
     <string name="default_pipeline">
         {"@type":"edu.mit.media.funf.pipeline.BasicPipeline",
          "name":"default",
-         "version":2,
+         "version":4,
          "data":[
             {"@type": "edu.mit.media.funf.probe.builtin.LocationProbe",
-             "@schedule": {"interval": 600 },
+             "@schedule": {"interval": 60 },
              "goodEnoughAccuracy": 80,
              "maxWaitTime": 60
             },
             {"@type": "com.example.autovol.ActivityProbe"},
-            {"@type": "com.example.autovol.AudioProbe",
-             "@schdeudle": {"interval": 300, "duration": 20 }
-            }
+            {"@type": "com.example.autovol.AudioProbe"},
+            {"@type": "edu.mit.media.funf.probe.builtin.BluetoothProbe",
+             "@schedule": {"@type": "edu.mit.media.funf.probe.builtin.LocationProbe" }
+            },
+            {"@type": "edu.mit.media.funf.probe.builtin.LightSensorProbe",
+             "@schedule": {"interval": 60 }
+            },
+            {"@type": "edu.mit.media.funf.probe.builtin.ProximitySensorProbe",
+             "@schedule": {"@type": "edu.mit.media.funf.probe.builtin.LightSensorProbe" }
+            },
+            {"@type": "edu.mit.media.funf.probe.builtin.WifiProbe",
+             "@schedule": {"@type": "edu.mit.media.funf.probe.builtin.BluetoothProbe" }
+            },
+            {"@type": "edu.mit.media.funf.probe.builtin.BatteryProbe",
+             "@schedule": {"interval": 600 }
+            },
+            {"@type": "edu.mit.media.funf.probe.builtin.RunningApplicationsProbe"},
          ]
         }</string>
     <string name="title_activity_main">MainActivity</string>
