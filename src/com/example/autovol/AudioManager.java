@@ -4,7 +4,6 @@ package com.example.autovol;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 
-import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.os.Handler;

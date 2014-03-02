@@ -11,6 +11,9 @@ import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,36 +27,67 @@ import edu.mit.media.funf.FunfManager;
 import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.pipeline.BasicPipeline;
 import edu.mit.media.funf.probe.Probe.DataListener;
+import edu.mit.media.funf.probe.builtin.BatteryProbe;
+import edu.mit.media.funf.probe.builtin.BluetoothProbe;
+import edu.mit.media.funf.probe.builtin.LightSensorProbe;
+import edu.mit.media.funf.probe.builtin.ProximitySensorProbe;
+import edu.mit.media.funf.probe.builtin.RunningApplicationsProbe;
 import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
+import edu.mit.media.funf.probe.builtin.WifiProbe;
 
 public class MainActivity extends Activity implements DataListener {
 	
 	public static final String PIPELINE_NAME = "default";
 	private FunfManager funfManager;
 	private BasicPipeline pipeline;
+	
 	private SimpleLocationProbe locationProbe;
 	private ActivityProbe activityProbe;
 	private AudioProbe audioProbe;
+	private BluetoothProbe bluetoothProbe;
+	private LightSensorProbe lightProbe;
+	private WifiProbe wifiProbe;
+	private ProximitySensorProbe proximityProbe;
+	private BatteryProbe batteryProbe;
+	private RunningApplicationsProbe appProbe;
+	
 	private Button scanNowButton;
 	private TextView locationText, activityText, audioText;
+	private CheckBox enabledBox;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
 	    @Override
 	    public void onServiceConnected(ComponentName name, IBinder service) {
+	    	Log.d("MainActivity", "onServiceConnected");
 	        funfManager = ((FunfManager.LocalBinder)service).getManager();
-	        funfManager.enablePipeline(PIPELINE_NAME);
 	        pipeline = (BasicPipeline) funfManager.getRegisteredPipeline(PIPELINE_NAME);
 	        funfManager.enablePipeline(PIPELINE_NAME);
 	        
+	        /*
 	        Gson gson = funfManager.getGson();
 	        locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
 	        activityProbe = gson.fromJson(new JsonObject(), ActivityProbe.class);
 	        audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
+	        bluetoothProbe = gson.fromJson(new JsonObject(), BluetoothProbe.class);
+	        lightProbe = gson.fromJson(new JsonObject(), LightSensorProbe.class);
+	        wifiProbe = gson.fromJson(new JsonObject(), WifiProbe.class);
+	        proximityProbe = gson.fromJson(new JsonObject(),ProximitySensorProbe.class);
+	        batteryProbe = gson.fromJson(new JsonObject(), BatteryProbe.class);
+	        appProbe = gson.fromJson(new JsonObject(), RunningApplicationsProbe.class);
 
-	        locationProbe.registerPassiveListener(MainActivity.this);
-	        activityProbe.registerPassiveListener(MainActivity.this);
-	        audioProbe.registerPassiveListener(MainActivity.this);
+	        locationProbe.registerListener(pipeline);
+	        activityProbe.registerListener(pipeline);
+	        audioProbe.registerListener(pipeline);
+	        bluetoothProbe.registerListener(pipeline);
+	        lightProbe.registerListener(pipeline);
+	        wifiProbe.registerListener(pipeline);
+	        proximityProbe.registerListener(pipeline);
+	        batteryProbe.registerListener(pipeline);
+	        appProbe.registerListener(pipeline);
+	        */
 	        
 	        scanNowButton.setEnabled(true);
+	        enabledBox.setChecked(pipeline.isEnabled());
+	        enabledBox.setEnabled(true);
 	    }
 	    
 	    @Override
@@ -70,6 +104,22 @@ public class MainActivity extends Activity implements DataListener {
 		locationText = (TextView) findViewById(R.id.loc_text);
 		activityText = (TextView) findViewById(R.id.activity_text);
 		audioText = (TextView) findViewById(R.id.audio_text);
+		enabledBox = (CheckBox) findViewById(R.id.enabled_checkbox);
+		enabledBox.setEnabled(false);
+		enabledBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (funfManager != null) {
+                    if (isChecked) {
+                        funfManager.enablePipeline(PIPELINE_NAME);
+                        pipeline = (BasicPipeline) funfManager.getRegisteredPipeline(PIPELINE_NAME);
+                    } else {
+                        funfManager.disablePipeline(PIPELINE_NAME);
+                    }
+                }
+			}
+		});
 	    
 	 // Forces the pipeline to scan now
 	    scanNowButton = (Button) findViewById(R.id.scan_button);
@@ -101,7 +151,14 @@ public class MainActivity extends Activity implements DataListener {
 	    
 	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
 	    
-	    Log.d("MainActivity", "Connected: " + servicesConnected());
+	    Log.d("MainActivity", "Play Services Connected: " + servicesConnected());
+	}
+	
+	@Override
+	protected void onDestroy() {
+		funfManager.disablePipeline(PIPELINE_NAME);
+		unbindService(funfManagerConn);
+		super.onDestroy();
 	}
 
 	@Override

@@ -8,9 +8,10 @@
         {"@type":"edu.mit.media.funf.pipeline.BasicPipeline",
          "name":"default",
          "version":4,
+         "archive": {"@schedule": {"interval": 600}},
          "data":[
             {"@type": "edu.mit.media.funf.probe.builtin.LocationProbe",
-             "@schedule": {"interval": 60 },
+             "@schedule": {"interval": 600 },
              "goodEnoughAccuracy": 80,
              "maxWaitTime": 60
             },
@@ -31,7 +32,7 @@
             {"@type": "edu.mit.media.funf.probe.builtin.BatteryProbe",
              "@schedule": {"interval": 600 }
             },
-            {"@type": "edu.mit.media.funf.probe.builtin.RunningApplicationsProbe"},
+            {"@type": "edu.mit.media.funf.probe.builtin.RunningApplicationsProbe"}
          ]
         }</string>
     <string name="title_activity_main">MainActivity</string>

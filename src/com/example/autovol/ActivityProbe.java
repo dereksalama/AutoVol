@@ -16,9 +16,8 @@ import com.google.android.gms.location.DetectedActivity;
 import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.probe.Probe.Base;
-import edu.mit.media.funf.probe.Probe.ContinuousProbe;
 
-public class ActivityProbe extends Base implements ContinuousProbe, ConnectionCallbacks, OnConnectionFailedListener {
+public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnectionFailedListener {
 	
     // Constants that define the activity detection interval
     public static final int MILLISECONDS_PER_SECOND = 1000;
@@ -125,6 +124,21 @@ public class ActivityProbe extends Base implements ContinuousProbe, ConnectionCa
          */
         mActivityRecognitionClient =
                 new ActivityRecognitionClient(getContext(), this, this);
+
+    }
+
+    /**
+     * Called when the probe switches from the enabled state to active
+     * running state. This should be used to send any data broadcasts, but
+     * must return quickly. If you have any long running processes they
+     * should be started on a separate thread created by this method, or
+     * should be divided into short runnables that are posted to this
+     * threads looper one at a time, to allow for the probe to change state.
+     */
+	@Override
+    protected void onStart() {
+		super.onStart();
+		
         /*
          * Create the PendingIntent that Location Services uses
          * to send activity recognition updates back to this app.
@@ -148,19 +162,6 @@ public class ActivityProbe extends Base implements ContinuousProbe, ConnectionCa
 	        filter.addAction(BROADCAST_ACTION);
 	        getContext().registerReceiver(receiver, filter);
 		}
-    }
-
-    /**
-     * Called when the probe switches from the enabled state to active
-     * running state. This should be used to send any data broadcasts, but
-     * must return quickly. If you have any long running processes they
-     * should be started on a separate thread created by this method, or
-     * should be divided into short runnables that are posted to this
-     * threads looper one at a time, to allow for the probe to change state.
-     */
-	@Override
-    protected void onStart() {
-		super.onStart();
 
     }
 
@@ -173,6 +174,16 @@ public class ActivityProbe extends Base implements ContinuousProbe, ConnectionCa
 	@Override
     protected void onStop() {
 		super.onStop();
+		// Set the request type to STOP
+        mRequestType = REQUEST_TYPE.STOP;
+        
+        // If a request is not already underway
+        if (!mInProgress) {
+            // Indicate that a request is in progress
+            mInProgress = true;
+            // Request a connection to Location Services
+            mActivityRecognitionClient.connect();
+        }
     }
 
     /**
@@ -185,16 +196,7 @@ public class ActivityProbe extends Base implements ContinuousProbe, ConnectionCa
     protected void onDisable() {
 		super.onDisable();
 		Log.d("ActivityProbe", "disabled");
-		// Set the request type to STOP
-        mRequestType = REQUEST_TYPE.STOP;
-        
-        // If a request is not already underway
-        if (!mInProgress) {
-            // Indicate that a request is in progress
-            mInProgress = true;
-            // Request a connection to Location Services
-            mActivityRecognitionClient.connect();
-        }
+
         getContext().unregisterReceiver(receiver);
     }
 
