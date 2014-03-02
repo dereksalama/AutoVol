@@ -9,8 +9,10 @@ import android.util.Log;
 
 import com.google.gson.JsonObject;
 
+import edu.mit.media.funf.Schedule;
 import edu.mit.media.funf.probe.Probe.Base;
 
+@Schedule.DefaultSchedule(interval=300, duration=30)
 public class AudioProbe extends Base {
 	
 	private AudioManager audioManager;
@@ -45,7 +47,7 @@ public class AudioProbe extends Base {
 			data.addProperty(AUDIO_TYPE, inference);
 			sendData(data);
 			Log.d("AudioProbe", "Stopped, inference: " + inference);
-			executor.schedule(startRecording, PAUSE_TIME, TimeUnit.SECONDS);
+			//executor.schedule(startRecording, PAUSE_TIME, TimeUnit.SECONDS);
 		}
 	};
 

@@ -1,5 +1,7 @@
 package com.example.autovol;
 
+import java.math.BigDecimal;
+
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -24,6 +26,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.FunfManager;
+import edu.mit.media.funf.Schedule;
 import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.pipeline.BasicPipeline;
 import edu.mit.media.funf.probe.Probe.DataListener;
@@ -59,10 +62,12 @@ public class MainActivity extends Activity implements DataListener {
 	    public void onServiceConnected(ComponentName name, IBinder service) {
 	    	Log.d("MainActivity", "onServiceConnected");
 	        funfManager = ((FunfManager.LocalBinder)service).getManager();
-	        pipeline = (BasicPipeline) funfManager.getRegisteredPipeline(PIPELINE_NAME);
+	       //pipeline = (BasicPipeline) funfManager.getRegisteredPipeline(PIPELINE_NAME);
+	        pipeline = new BasicPipeline();
+	        funfManager.registerPipeline(PIPELINE_NAME, pipeline);
 	        funfManager.enablePipeline(PIPELINE_NAME);
 	        
-	        /*
+	        
 	        Gson gson = funfManager.getGson();
 	        locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
 	        activityProbe = gson.fromJson(new JsonObject(), ActivityProbe.class);
@@ -74,16 +79,30 @@ public class MainActivity extends Activity implements DataListener {
 	        batteryProbe = gson.fromJson(new JsonObject(), BatteryProbe.class);
 	        appProbe = gson.fromJson(new JsonObject(), RunningApplicationsProbe.class);
 
-	        locationProbe.registerListener(pipeline);
-	        activityProbe.registerListener(pipeline);
-	        audioProbe.registerListener(pipeline);
-	        bluetoothProbe.registerListener(pipeline);
-	        lightProbe.registerListener(pipeline);
-	        wifiProbe.registerListener(pipeline);
-	        proximityProbe.registerListener(pipeline);
-	        batteryProbe.registerListener(pipeline);
-	        appProbe.registerListener(pipeline);
-	        */
+//	        locationProbe.registerListener(pipeline);
+//	        activityProbe.registerListener(pipeline);
+//	        audioProbe.registerListener(pipeline);
+//	        bluetoothProbe.registerListener(pipeline);
+//	        lightProbe.registerListener(pipeline);
+//	        wifiProbe.registerListener(pipeline);
+//	        proximityProbe.registerListener(pipeline);
+//	        batteryProbe.registerListener(pipeline);
+//	        appProbe.registerListener(pipeline);
+	        
+	        funfManager.requestData(pipeline, locationProbe.getConfig());
+	        activityProbe.registerPassiveListener(pipeline); //scheduling in probe
+	        funfManager.requestData(pipeline, audioProbe.getConfig());
+	        funfManager.requestData(pipeline, bluetoothProbe.getConfig());
+	        funfManager.requestData(pipeline, lightProbe.getConfig(),
+	        		new Schedule.BasicSchedule(new BigDecimal(60), new BigDecimal(1), 
+	        				true, false));
+	        funfManager.requestData(pipeline, wifiProbe.getConfig());
+	        funfManager.requestData(pipeline, proximityProbe.getConfig());
+	        funfManager.requestData(pipeline, batteryProbe.getConfig());
+	        funfManager.requestData(pipeline, appProbe.getConfig());
+	        
+	        funfManager.registerPipelineAction(pipeline, BasicPipeline.ACTION_ARCHIVE, 
+	        		new Schedule.BasicSchedule(new BigDecimal(60), null, false, true));
 	        
 	        scanNowButton.setEnabled(true);
 	        enabledBox.setChecked(pipeline.isEnabled());

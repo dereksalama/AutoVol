@@ -502,7 +502,9 @@ public class AudioManager {
      * but the state is set to ERROR
      * 
      */
-    public AudioManager(int audioSource, int sampleRate,
+    
+    private static final int[] POSSIBLE_SAMPLE_RATES = {8000, 11025, 16000, 22050, 44100};
+    public AudioManager(int audioSource, /*int sampleRate, */
 	    int channelConfig, int audioFormat) {
 	try {
 
@@ -519,6 +521,15 @@ public class AudioManager {
 		}
 
 		aSource = audioSource;
+		
+		int sampleRate = 44100;
+		for (int rate : POSSIBLE_SAMPLE_RATES) {
+			int bufferSize = AudioRecord.getMinBufferSize(rate, channelConfig, audioFormat);
+	        if (bufferSize > 0) {
+	            sampleRate = rate;
+	            break;
+	        }
+		}
 		sRate = sampleRate;
 		aFormat = audioFormat;
 
