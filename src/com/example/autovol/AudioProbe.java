@@ -11,9 +11,11 @@ import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.Schedule;
 import edu.mit.media.funf.probe.Probe.Base;
+import edu.mit.media.funf.probe.Probe.PassiveProbe;
 
-@Schedule.DefaultSchedule(interval=300, duration=30)
-public class AudioProbe extends Base {
+//TODO: fix these
+@Schedule.DefaultSchedule(interval=60, duration=20)
+public class AudioProbe extends Base implements PassiveProbe {
 	
 	private AudioManager audioManager;
 	
@@ -27,6 +29,7 @@ public class AudioProbe extends Base {
 	private final Runnable startRecording = new Runnable() {
 		@Override
 		public void run() {
+			Log.d("AudioManager", "start");
 			audioManager.prepare();
 			//audioManager.startRecording();
 			audioManager.start();
@@ -47,7 +50,7 @@ public class AudioProbe extends Base {
 			data.addProperty(AUDIO_TYPE, inference);
 			sendData(data);
 			Log.d("AudioProbe", "Stopped, inference: " + inference);
-			//executor.schedule(startRecording, PAUSE_TIME, TimeUnit.SECONDS);
+			executor.schedule(startRecording, PAUSE_TIME, TimeUnit.SECONDS);
 		}
 	};
 
@@ -64,8 +67,12 @@ public class AudioProbe extends Base {
 		super.onEnable();
 		Log.d("AudioProbe", "enabled");
 		audioManager = new AudioManager(android.media.MediaRecorder.AudioSource.MIC, 
-				/*8000*/ 44100, AudioFormat.CHANNEL_IN_MONO,
+				AudioFormat.CHANNEL_IN_MONO,
 				AudioFormat.ENCODING_PCM_16BIT);
+		
+		Log.d("AudioProbe", "submitting run runnable");
+		executor = Executors.newScheduledThreadPool(1);
+		executor.submit(startRecording);
     }
 
     /**
@@ -79,8 +86,6 @@ public class AudioProbe extends Base {
 	@Override
     protected void onStart() {
 		super.onStart();
-		executor = Executors.newScheduledThreadPool(1);
-		executor.submit(startRecording);
     }
 
     /**
@@ -92,12 +97,6 @@ public class AudioProbe extends Base {
 	@Override
     protected void onStop() {
 		super.onStop();
-		if (recording) {
-			executor.shutdownNow();
-		} else {
-			executor.shutdown();
-		}
-
     }
 
     /**
@@ -108,7 +107,15 @@ public class AudioProbe extends Base {
      */
 	@Override
     protected void onDisable() {
-		super.onDisable();
+		if (recording) {
+			Log.d("AudioProbe", "submitting stop runnable");
+			executor.submit(stopRecording);
+			executor.shutdown();
+		} else {
+			Log.d("AudioProbe", "onStop, already stopped");
+			executor.shutdownNow();
+		}
 		audioManager = null;
+		super.onDisable();
     }
 }

@@ -141,9 +141,9 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
         
 		if (!mInProgress) {
 			mInProgress = true;
-			mActivityRecognitionClient.connect();
 			
 			mRequestType = REQUEST_TYPE.START;
+			mActivityRecognitionClient.connect();
 			
 	        IntentFilter filter = new IntentFilter();
 	        filter.addAction(BROADCAST_ACTION);
