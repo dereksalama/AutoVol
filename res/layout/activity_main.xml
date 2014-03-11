@@ -8,59 +8,14 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity" >
 
-    <TextView
-        android:id="@+id/loc_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="loc"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
-
-    <TextView
-        android:id="@+id/activity_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/loc_text"
-        android:layout_below="@+id/loc_text"
-        android:layout_marginTop="28dp"
-        android:text="activity"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
-
-    <Button
-        android:id="@+id/scan_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/activity_text"
-        android:layout_below="@+id/activity_text"
-        android:layout_marginTop="40dp"
-        android:text="Scan" />
-
-    <TextView
-        android:id="@+id/audio_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/activity_text"
-        android:layout_alignBottom="@+id/activity_text"
-        android:layout_alignParentRight="true"
-        android:layout_marginRight="38dp"
-        android:text="Audio"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
-
-    <Button
-        android:id="@+id/stop_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/scan_button"
-        android:layout_alignBottom="@+id/scan_button"
-        android:layout_toRightOf="@+id/activity_text"
-        android:text="Stop" />
-
     <CheckBox
         android:id="@+id/enabled_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/scan_button"
-        android:layout_below="@+id/scan_button"
-        android:layout_marginTop="47dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="26dp"
         android:text="Enabled" />
 
 </RelativeLayout>

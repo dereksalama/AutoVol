@@ -55,8 +55,6 @@ public class MainActivity extends Activity implements DataListener {
 	private RunningApplicationsProbe appProbe;
 	private RingerVolumeProbe ringerProbe;
 	
-	private Button scanNowButton;
-	private TextView locationText, activityText, audioText;
 	private CheckBox enabledBox;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
 	    @Override

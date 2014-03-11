@@ -1,7 +1,5 @@
 package com.autovol.ml;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,7 +7,6 @@ import java.util.Map.Entry;
 
 import weka.core.Instance;
 import weka.core.Instances;
-import weka.core.converters.CSVLoader;
 import weka.core.neighboursearch.KDTree;
 
 public class KnnClassifier {
@@ -17,20 +14,15 @@ public class KnnClassifier {
 	private KDTree tree;
 	private static final int DEFAULT_K = 3;
 	
-	public static KnnClassifier getKnnClassifier(String csvFilePath) throws IOException {
+	public static KnnClassifier getKnnClassifier(Instances is) {
 		KnnClassifier classifier = new KnnClassifier();
-		File csvFile = new File(csvFilePath);
-		classifier.loadCsvFile(csvFile);
+		classifier.loadTree(is);
 		return classifier;
 	}
 	
 	private KnnClassifier() {}
 	
-	private void loadCsvFile(File f) throws IOException {
-		CSVLoader loader = new CSVLoader();
-		loader.setSource(f);
-		Instances data = loader.getDataSet();
-		data.setClassIndex(data.numAttributes() - 1); // last attr = class
+	private void loadTree(Instances data){
 		tree = new KDTree(data);
 	}
 	
