@@ -41,7 +41,6 @@ public class CurrentState implements DataListener {
 		"loc_provider", "activity_confidence", "light", "distance", "wifi_count", "charging",
 		"ringer"};
 	private Set<String> typesWaitingInit = new HashSet<String>(Arrays.asList(TYPES_NEEDING_INIT));
-	private final int numAttrs;
 	
 	private static final int WIFI_WAIT_PERIOD = 15;
 	private int lastWifiTime = 0;
@@ -91,29 +90,11 @@ public class CurrentState implements DataListener {
 		"audio_error"
 	};
 	
-	private static final Set<String> NON_APP_FIELDS = new HashSet<String>();
-	static {
-		NON_APP_FIELDS.addAll(Arrays.asList(TYPES_NEEDING_INIT));
-		NON_APP_FIELDS.addAll(Arrays.asList(ACTIVITY_NAMES));
-		NON_APP_FIELDS.addAll(Arrays.asList(AUDIO_NAMES));
-	}
-	
-	private static final Set<String> APP_FIELDS = new HashSet<String>();
-	
-	
-	public CurrentState(Instances data, Context context) {
-		numAttrs = data.numAttributes();
-		for (int i = 0; i < numAttrs; i++) {
-			String attr = data.attribute(i).name();
-			if (!typesWaitingInit.contains(attr)) {
-				values.put(attr, 0.0);
-			}
-			
-			if (!NON_APP_FIELDS.contains(attr)) {
-				APP_FIELDS.add(attr);
-			}
-		}
+	final int numAtts;
+	public CurrentState(Context context) {
 		this.context = context;
+		// 2 for day/time
+		numAtts = typesWaitingInit.size() + ACTIVITY_NAMES.length + AUDIO_NAMES.length + 2;
 	}
 	
 	public void enable(FunfManager funfManager) {
@@ -158,7 +139,7 @@ public class CurrentState implements DataListener {
 	}
 	
 	public Instance toInstance() {
-		Instance inst = new Instance(numAttrs);
+		Instance inst = new Instance(numAtts);
 		for (Entry<String, Double> e : values.entrySet()) {
 			Attribute attr = new Attribute(e.getKey());
 			inst.setValue(attr, e.getValue());
@@ -225,20 +206,6 @@ public class CurrentState implements DataListener {
 		} else if (probeType.endsWith("ProximitySensorProbe")) {
 			double distance = data.get("distance").getAsDouble();
 			addValue("distance", distance);
-		} else if (probeType.endsWith("RunningApplicationsProbe")) {
-			String currentApp = data.getAsJsonObject("taskInfo")
-					.getAsJsonObject("baseIntent")
-					.getAsJsonObject("mComponent")
-					.get("mPackage").getAsString();
-			
-			for (String app : APP_FIELDS) {
-				if (currentApp.equals(app)) {
-					values.put(currentApp, 1.0);
-				} else {
-					values.put(currentApp, 0.0);
-				}
-			}
-			
 		}  else {
 			Log.e("CurrentState", "PROBE NOT RECOGNIZED!!");
 		}

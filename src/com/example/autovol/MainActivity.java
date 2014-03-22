@@ -1,12 +1,10 @@
 package com.example.autovol;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 
 import weka.core.Instance;
-import weka.core.Instances;
-import weka.core.converters.CSVLoader;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -36,15 +34,14 @@ import edu.mit.media.funf.pipeline.BasicPipeline;
 import edu.mit.media.funf.probe.builtin.BatteryProbe;
 import edu.mit.media.funf.probe.builtin.BluetoothProbe;
 import edu.mit.media.funf.probe.builtin.ProximitySensorProbe;
-import edu.mit.media.funf.probe.builtin.RunningApplicationsProbe;
 import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
 import edu.mit.media.funf.probe.builtin.WifiProbe;
 
 public class MainActivity extends Activity {
 	
-	public static final String CSV_FILE_PATH = ""; //TODO
+	private static final String CSV_FILE_NAME = "labeled_output.csv";
 	public static final String PIPELINE_NAME = "default";
-	public static final int ARCHIVE_DELAY = 5 * 60;
+	public static final int ARCHIVE_DELAY = 15 * 60;
 	private FunfManager funfManager;
 	private BasicPipeline pipeline;
 	
@@ -56,7 +53,6 @@ public class MainActivity extends Activity {
 	private WifiProbe wifiProbe;
 	private ProximitySensorProbe proximityProbe;
 	private BatteryProbe batteryProbe;
-	private RunningApplicationsProbe appProbe;
 	private RingerVolumeProbe ringerProbe;
 	
 	private CurrentState currentState;
@@ -83,7 +79,6 @@ public class MainActivity extends Activity {
 	        wifiProbe = gson.fromJson(new JsonObject(), WifiProbe.class);
 	        proximityProbe = gson.fromJson(new JsonObject(),ProximitySensorProbe.class);
 	        batteryProbe = gson.fromJson(new JsonObject(), BatteryProbe.class);
-	        appProbe = gson.fromJson(new JsonObject(), RunningApplicationsProbe.class);
 	        ringerProbe = gson.fromJson(new JsonObject(), RingerVolumeProbe.class);
 	        
 	        funfManager.requestData(pipeline, locationProbe.getConfig());
@@ -97,7 +92,6 @@ public class MainActivity extends Activity {
 	        funfManager.requestData(pipeline, wifiProbe.getConfig());
 	        funfManager.requestData(pipeline, proximityProbe.getConfig());
 	        funfManager.requestData(pipeline, batteryProbe.getConfig());
-	        funfManager.requestData(pipeline, appProbe.getConfig());
 	        ringerProbe.registerPassiveListener(pipeline);
 	        
 	        funfManager.registerPipelineAction(pipeline, BasicPipeline.ACTION_ARCHIVE, 
@@ -105,6 +99,8 @@ public class MainActivity extends Activity {
 	        
 	        enabledBox.setChecked(pipeline.isEnabled());
 	        enabledBox.setEnabled(true);
+	        classifyBox.setChecked(false);
+	        classifyBox.setEnabled(true);
 	    }
 	    
 	    @Override
@@ -114,10 +110,17 @@ public class MainActivity extends Activity {
 	};
 	
 	private void loadClassificationData() throws IOException {
+		/*
 	    CSVLoader loader = new CSVLoader();
-	    loader.setSource(new File(CSV_FILE_PATH));
+	    InputStream is = getResources().getAssets().open("data/" + CSV_FILE_NAME);
+
+	    loader.setSource(is);
 	    Instances data = loader.getDataSet();
 		svm = SvmClassifier.createSvmClassifier(data);
+		*/
+		InputStream is = getResources().getAssets().open("models/smo_model.model");
+		svm = SvmClassifier.loadSvmClassifier(is);
+		is.close();
 	}
 	
 	private BroadcastReceiver classifyReceiver = new BroadcastReceiver() {
@@ -154,6 +157,8 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		currentState = new Cur
 		
 		enabledBox = (CheckBox) findViewById(R.id.enabled_checkbox);
 		enabledBox.setEnabled(false);

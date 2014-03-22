@@ -1,14 +1,20 @@
 package com.autovol.ml;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.StreamCorruptedException;
+
 import weka.classifiers.functions.SMO;
 import weka.core.Instance;
-import weka.core.Instances;
 import android.util.Log;
 
 public class SvmClassifier {
 	
 	private SMO smo;
-	
+/*	
 	public static SvmClassifier createSvmClassifier(Instances data) {
 		SvmClassifier classifier = new SvmClassifier();
 		try {
@@ -21,11 +27,38 @@ public class SvmClassifier {
 		}
 	}
 	
-	private SvmClassifier() {}
+	
 	
 	private void trainClassifier(Instances data) throws Exception {
 		smo = new SMO();
 		smo.buildClassifier(data);
+	}
+	*/
+	
+	public static SvmClassifier loadSvmClassifier(InputStream is) {
+		SvmClassifier classifier = new SvmClassifier();
+		try {
+			classifier.loadClassifier(is);
+		} catch (StreamCorruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return classifier;
+	}
+	
+	private void loadClassifier(InputStream is) throws StreamCorruptedException, FileNotFoundException, IOException, ClassNotFoundException {
+		ObjectInputStream ois = new ObjectInputStream(is);
+		smo = (SMO) ois.readObject();
+		ois.close();
 	}
 	
 	public double classify(Instance target) {
