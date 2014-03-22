@@ -158,7 +158,7 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		currentState = new Cur
+		currentState = new CurrentState(this);
 		
 		enabledBox = (CheckBox) findViewById(R.id.enabled_checkbox);
 		enabledBox.setEnabled(false);

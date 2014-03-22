@@ -1,6 +1,7 @@
 package com.autovol.ml;
 
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -9,7 +10,6 @@ import java.util.Set;
 
 import weka.core.Attribute;
 import weka.core.Instance;
-import weka.core.Instances;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
@@ -56,7 +56,6 @@ public class CurrentState implements DataListener {
 	private WifiProbe wifiProbe;
 	private ProximitySensorProbe proximityProbe;
 	private BatteryProbe batteryProbe;
-	private RunningApplicationsProbe appProbe;
 	private RingerVolumeProbe ringerProbe;
 	
 	private volatile boolean enabled = false;
@@ -107,7 +106,6 @@ public class CurrentState implements DataListener {
         wifiProbe = gson.fromJson(new JsonObject(), WifiProbe.class);
         proximityProbe = gson.fromJson(new JsonObject(),ProximitySensorProbe.class);
         batteryProbe = gson.fromJson(new JsonObject(), BatteryProbe.class);
-        appProbe = gson.fromJson(new JsonObject(), RunningApplicationsProbe.class);
         ringerProbe = gson.fromJson(new JsonObject(), RingerVolumeProbe.class);
         
         funfManager.requestData(this, locationProbe.getConfig());
@@ -120,7 +118,6 @@ public class CurrentState implements DataListener {
         funfManager.requestData(this, wifiProbe.getConfig());
         funfManager.requestData(this, proximityProbe.getConfig());
         funfManager.requestData(this, batteryProbe.getConfig());
-        funfManager.requestData(this, appProbe.getConfig());
         ringerProbe.registerPassiveListener(this);
         enabled = true;
 	}
@@ -140,6 +137,21 @@ public class CurrentState implements DataListener {
 	
 	public Instance toInstance() {
 		Instance inst = new Instance(numAtts);
+		Calendar cal = Calendar.getInstance();
+		int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+		int convertedDayOfWeek = 0;
+		if (dayOfWeek == Calendar.SUNDAY) {
+			convertedDayOfWeek = 6;
+		} else {
+			convertedDayOfWeek = dayOfWeek - 2;
+		}
+		Attribute day = new Attribute("day");
+		inst.setValue(day, convertedDayOfWeek);
+		
+		int minuteIntoDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
+		Attribute time = new Attribute("time");
+		inst.setValue(time, minuteIntoDay);
+
 		for (Entry<String, Double> e : values.entrySet()) {
 			Attribute attr = new Attribute(e.getKey());
 			inst.setValue(attr, e.getValue());
@@ -155,7 +167,9 @@ public class CurrentState implements DataListener {
 	
 	@Override
 	public void onDataReceived(IJsonObject probe, IJsonObject data) {
-		String probeType = data.get("@type").getAsString();
+		JsonElement type = probe.get("@type");
+		String probeType = type.getAsString();
+		Log.d("CurrentState", "data from " + probeType);
 		if (probeType.endsWith("ActivityProbe")) {
 			int confidence = data.get("confidence").getAsInt();
 			addValue("confidence", confidence);
@@ -178,7 +192,7 @@ public class CurrentState implements DataListener {
 				}
 			}
 		} else if (probeType.endsWith("MyLightSensorProbe")) {
-			int lux = data.get("lux").getAsInt();
+			float lux = data.get("lux").getAsFloat();
 			addValue("lux", lux);
 		} else if (probeType.endsWith("RingerVolumeProbe")) {
 			int ringerMode = data.get("ringer_mode").getAsInt();
@@ -190,8 +204,13 @@ public class CurrentState implements DataListener {
 			double lon = data.get("mLongitude").getAsDouble();
 			addValue("mLongitude", lon);
 			
-			int provider = data.get("mProvider").getAsInt();
-			addValue("mProvider", provider);
+			String provider = data.get("mProvider").getAsString();
+			if (provider.equals("gps")) {
+				addValue("mProvider", 1);
+			} else {
+				addValue("mProvider", 0);
+			}
+			
 		} else if (probeType.endsWith("WifiProbe")) {
 			long currentTimeInSeconds = System.currentTimeMillis() / 1000;
 			long timeSinceLastUpdate = currentTimeInSeconds - lastWifiTime;
@@ -202,22 +221,26 @@ public class CurrentState implements DataListener {
 			String bssid = data.get("BSSID").getAsString();
 			visibleWifis.add(bssid);
 			
-			values.put("wifi_count", (double) visibleWifis.size());
+			addValue("wifi_count", visibleWifis.size());
 		} else if (probeType.endsWith("ProximitySensorProbe")) {
 			double distance = data.get("distance").getAsDouble();
 			addValue("distance", distance);
+		} else if (probeType.endsWith("BatteryProbe")) {
+			double charging = data.get("plugged").getAsDouble();
+			addValue("plugged", charging);
 		}  else {
-			Log.e("CurrentState", "PROBE NOT RECOGNIZED!!");
+			Log.e("CurrentState", "PROBE NOT RECOGNIZED!! -> " + probeType);
 		}
 		
 
 		if (typesWaitingInit.isEmpty()){
 			//TODO: this is kinda hacky
 			Log.d("CurrentState", "State updated");
+
 			Intent broadcastIntent = new Intent(NEW_STATE_BROADCAST);
 			context.sendBroadcast(broadcastIntent);
 		} else {
-			Log.d("CurrentState", "State still incomplete");
+			Log.d("CurrentState", "State still incomplete. Need: " + typesWaitingInit.toString());
 		}
 	}
 	

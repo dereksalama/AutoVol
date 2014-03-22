@@ -11,6 +11,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioFormat;
 import android.util.Log;
 
@@ -31,23 +32,20 @@ public class AudioProbe extends Base implements PassiveProbe {
 	private static final int INTERVAL_MILLIS = INTERVAL_SECONDS * 1000;
 	private volatile boolean recording = false;
 	
+	private static final String ALARM_FILTER = "com.example.autovol.AUDIO_START";
+	
 	
 	private AlarmManager alarmMan;
 	private PendingIntent alarmIntent;
+	private AlarmReceiver alarmReceiver;
 	
 	private class AlarmReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			Log.d("AudioProbe", "alarm received");
 			executor.submit(startRecording);
-			ScheduledFuture<?> stopTask = executor.schedule(stopRecording, DURATION,
+			executor.schedule(stopRecording, DURATION,
 					TimeUnit.SECONDS);
-			try {
-				stopTask.get();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (ExecutionException e) {
-				e.printStackTrace();
-			}
 		}
 	}
 	
@@ -95,11 +93,13 @@ public class AudioProbe extends Base implements PassiveProbe {
 				AudioFormat.CHANNEL_IN_MONO,
 				AudioFormat.ENCODING_PCM_16BIT);
 		
-		Log.d("AudioProbe", "submitting run runnable");
 		executor = Executors.newScheduledThreadPool(1);
 		//executor.submit(startRecording);
 		
-		Intent intent = new Intent(getContext(), AlarmReceiver.class);
+		alarmReceiver = new AlarmReceiver();
+		getContext().registerReceiver(alarmReceiver, new IntentFilter(ALARM_FILTER));
+		
+		Intent intent = new Intent(ALARM_FILTER);
 		alarmIntent = PendingIntent.getBroadcast(getContext(), 0, intent, 0);
 		alarmMan = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
 		alarmMan.setInexactRepeating(AlarmManager.RTC_WAKEUP, 
@@ -149,6 +149,7 @@ public class AudioProbe extends Base implements PassiveProbe {
 		}
 		audioManager = null;
 		alarmMan.cancel(alarmIntent);
+		getContext().unregisterReceiver(alarmReceiver);
 		super.onDisable();
     }
 }

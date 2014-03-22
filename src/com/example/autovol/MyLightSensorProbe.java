@@ -13,6 +13,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -20,6 +21,7 @@ import android.hardware.SensorManager;
 import android.util.Log;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 import edu.mit.media.funf.probe.Probe.Base;
 import edu.mit.media.funf.probe.Probe.PassiveProbe;
@@ -29,12 +31,14 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 	private static final int INTERVAL_SECONDS = 60 * 2;
 	private static final int INTERVAL_MILLIS = INTERVAL_SECONDS * 1000;
 	private static final int DURATION = 2;
+	private static final String ALARM_FILTER = "com.example.autovol.LIGHT_SENSOR_START";
 	
 	private ScheduledExecutorService executor;
 	
 	private SensorManager sensorManager;
 	private Sensor sensor;
 	private SensorEventListener sensorListener;
+	private AlarmReceiver alarmReceiver;
 	
 	private AlarmManager alarmMan;
 	private PendingIntent alarmIntent;
@@ -46,16 +50,10 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 	private class AlarmReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			Log.d("MyLightSensorProbe", "Alarm received");
 			executor.submit(startRecording);
-			ScheduledFuture<?> stopTask = executor.schedule(stopRecording, DURATION,
+			executor.schedule(stopRecording, DURATION,
 					TimeUnit.SECONDS);
-			try {
-				stopTask.get();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (ExecutionException e) {
-				e.printStackTrace();
-			}
 		}
 	}
 	
@@ -64,7 +62,9 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 		public void run() {
 			Log.d("MyLightSensorProbe", "start");
 			if (!running.getAndSet(true)) {
-				sensorManager.registerListener(sensorListener, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+				Log.d("MyLightSensorProbe", "registering light sensor");
+				sensorManager.registerListener(sensorListener, sensor, 
+						SensorManager.SENSOR_DELAY_FASTEST);
 			}
 		}
 	};
@@ -72,16 +72,17 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 	private final Runnable stopRecording = new Runnable() {
 		@Override
 		public void run() {
-			Log.d("MyLightSensorProbe", "stop");
+			Log.d("MyLightSensorProbe", "collected " + measurements.size() + " samples");
 			sensorManager.unregisterListener(sensorListener);
-			if (running.getAndSet(false)) {
+			if (running.getAndSet(false) && measurements.size() > 0) {
+					
 				JsonObject data = new JsonObject();
 				Float total = Float.valueOf(0);
 				for (Float val : measurements) {
 					total += val;
 				}
 				Float avg = total / measurements.size();
-				data.addProperty("lux", avg);
+				data.add("lux", new JsonPrimitive(avg));
 				sendData(data);
 				measurements.clear();
 			}
@@ -111,7 +112,10 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 		executor = Executors.newScheduledThreadPool(1);
 		//executor.submit(startRecording);
 		
-		Intent intent = new Intent(getContext(), AlarmReceiver.class);
+		alarmReceiver = new AlarmReceiver();
+		getContext().registerReceiver(alarmReceiver, new IntentFilter(ALARM_FILTER));
+		
+		Intent intent = new Intent(ALARM_FILTER);
 		alarmIntent = PendingIntent.getBroadcast(getContext(), 0, intent, 0);
 		alarmMan = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
 		alarmMan.setInexactRepeating(AlarmManager.RTC_WAKEUP, 
@@ -127,6 +131,11 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 	
 	@Override
 	protected void onStop() {
+		super.onStop();
+	}
+	
+	@Override
+    protected void onDisable() {
 		if (running.get()) {
 			executor.submit(stopRecording);
 			executor.shutdown();
@@ -134,16 +143,8 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 			executor.shutdownNow();
 		}
 		alarmMan.cancel(alarmIntent);
-		super.onStop();
-	}
-	
-	@Override
-    protected void onDisable() {
+		getContext().unregisterReceiver(alarmReceiver);
 		super.onDisable();
 	}
-	
-	
-	
-	
 
 }
