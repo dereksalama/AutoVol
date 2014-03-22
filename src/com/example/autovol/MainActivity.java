@@ -1,35 +1,38 @@
 package com.example.autovol;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 
+import weka.core.Instance;
+import weka.core.Instances;
+import weka.core.converters.CSVLoader;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.autovol.ml.CurrentState;
+import com.autovol.ml.SvmClassifier;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.FunfManager;
 import edu.mit.media.funf.Schedule;
-import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.pipeline.BasicPipeline;
-import edu.mit.media.funf.probe.Probe.DataListener;
 import edu.mit.media.funf.probe.builtin.BatteryProbe;
 import edu.mit.media.funf.probe.builtin.BluetoothProbe;
 import edu.mit.media.funf.probe.builtin.ProximitySensorProbe;
@@ -37,8 +40,9 @@ import edu.mit.media.funf.probe.builtin.RunningApplicationsProbe;
 import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
 import edu.mit.media.funf.probe.builtin.WifiProbe;
 
-public class MainActivity extends Activity implements DataListener {
+public class MainActivity extends Activity {
 	
+	public static final String CSV_FILE_PATH = ""; //TODO
 	public static final String PIPELINE_NAME = "default";
 	public static final int ARCHIVE_DELAY = 5 * 60;
 	private FunfManager funfManager;
@@ -55,7 +59,11 @@ public class MainActivity extends Activity implements DataListener {
 	private RunningApplicationsProbe appProbe;
 	private RingerVolumeProbe ringerProbe;
 	
-	private CheckBox enabledBox;
+	private CurrentState currentState;
+	private SvmClassifier svm;
+	
+	private CheckBox enabledBox, classifyBox;
+	private TextView suggestionText;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
 	    @Override
 	    public void onServiceConnected(ComponentName name, IBinder service) {
@@ -95,7 +103,6 @@ public class MainActivity extends Activity implements DataListener {
 	        funfManager.registerPipelineAction(pipeline, BasicPipeline.ACTION_ARCHIVE, 
 	        		new Schedule.BasicSchedule(new BigDecimal(ARCHIVE_DELAY), null, false, false));
 	        
-	        scanNowButton.setEnabled(true);
 	        enabledBox.setChecked(pipeline.isEnabled());
 	        enabledBox.setEnabled(true);
 	    }
@@ -105,15 +112,49 @@ public class MainActivity extends Activity implements DataListener {
 	        funfManager = null;
 	    }
 	};
+	
+	private void loadClassificationData() throws IOException {
+	    CSVLoader loader = new CSVLoader();
+	    loader.setSource(new File(CSV_FILE_PATH));
+	    Instances data = loader.getDataSet();
+		svm = SvmClassifier.createSvmClassifier(data);
+	}
+	
+	private BroadcastReceiver classifyReceiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Instance obs = currentState.toInstance();
+			try {
+				int classification = (int) Math.round(svm.classify(obs));
+				classification -= 1; // Translate back to android type
+				switch (classification) {
+				case android.media.AudioManager.RINGER_MODE_NORMAL:
+					suggestionText.setText("on");
+					break;
+				case android.media.AudioManager.RINGER_MODE_VIBRATE:
+					suggestionText.setText("vibrate");
+					break;
+				case android.media.AudioManager.RINGER_MODE_SILENT:
+					suggestionText.setText("silent");
+					break;
+				default:
+					Log.e("MainActivity", "Unknown ringer type");
+				}
+			} catch (Exception e) {
+				Log.e("MainActivity", "Error classifying");
+				e.printStackTrace();
+			}
+			
+		}
+		
+	};
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		locationText = (TextView) findViewById(R.id.loc_text);
-		activityText = (TextView) findViewById(R.id.activity_text);
-		audioText = (TextView) findViewById(R.id.audio_text);
 		enabledBox = (CheckBox) findViewById(R.id.enabled_checkbox);
 		enabledBox.setEnabled(false);
 		enabledBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
@@ -130,34 +171,34 @@ public class MainActivity extends Activity implements DataListener {
                 }
 			}
 		});
-	    
-	 // Forces the pipeline to scan now
-	    scanNowButton = (Button) findViewById(R.id.scan_button);
-	    scanNowButton.setEnabled(false);
-
-	    scanNowButton.setOnClickListener(new OnClickListener() {
-	        @Override
-	        public void onClick(View v) {
-	            if (pipeline.isEnabled()) {
-	                audioProbe.registerListener(MainActivity.this);
-	            } else {
-	                Toast.makeText(getBaseContext(), "Pipeline is not enabled.", Toast.LENGTH_SHORT).show();
-	            }
-	        }
-	    });
-	    
-	    Button stopButton = (Button) findViewById(R.id.stop_button);
-
-	    stopButton.setOnClickListener(new OnClickListener() {
-	        @Override
-	        public void onClick(View v) {
-	            if (pipeline.isEnabled()) {
-	                audioProbe.unregisterListener(MainActivity.this);
-	            } else {
-	                Toast.makeText(getBaseContext(), "Pipeline is not enabled.", Toast.LENGTH_SHORT).show();
-	            }
-	        }
-	    });
+		
+		classifyBox = (CheckBox) findViewById(R.id.classify_checkbox);
+		classifyBox.setChecked(false);
+		classifyBox.setEnabled(false);
+		classifyBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				if (isChecked) {
+					try {
+						loadClassificationData();
+						currentState.enable(funfManager);
+					} catch (IOException e) {
+						Log.e("MainActivity", "failed to load csv data");
+						e.printStackTrace();
+						classifyBox.setChecked(false);
+					}
+				} else {
+					currentState.disable(funfManager);
+				}
+			}
+		});
+		
+		suggestionText = (TextView) findViewById(R.id.ringer_suggestion_text);
+		
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(CurrentState.NEW_STATE_BROADCAST);
+        registerReceiver(classifyReceiver, filter);
 	    
 	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
 	    
@@ -166,6 +207,7 @@ public class MainActivity extends Activity implements DataListener {
 	
 	@Override
 	protected void onDestroy() {
+		currentState.disable(funfManager);
 		funfManager.disablePipeline(PIPELINE_NAME);
 		unbindService(funfManagerConn);
 		super.onDestroy();
@@ -176,66 +218,6 @@ public class MainActivity extends Activity implements DataListener {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
-	}
-
-	@Override
-	public void onDataCompleted(final IJsonObject arg0, final JsonElement arg1) {
-		String type = arg0.get("@type").getAsString();
-		Log.d("MainActivity", "data complete from " + type);
-		if (type.equals("edu.mit.media.funf.probe.builtin.SimpleLocationProbe")) {
-			Log.d("MainActivity", "LocationProbe completed");
-			locationProbe.registerPassiveListener(this);
-		} else if (type.equals("com.example.autovol.ActivityProbe")) {
-			Log.d("MainActivity", "ActivityProbe completed");
-			activityProbe.registerPassiveListener(this);
-		} else if (type.equals("com.example.autovol.AudioProbe")) {
-			Log.d("MainActivity", "AudioProbe completed");
-		}
-	}
-
-	@Override
-	public void onDataReceived(final IJsonObject arg0, final IJsonObject arg1) {
-		String type = arg0.get("@type").getAsString();
-		Log.d("MainActivity", "data received from " + type);
-		if (type.equals("edu.mit.media.funf.probe.builtin.SimpleLocationProbe")) {
-			final String networkType = arg1.get("mProvider").getAsString();
-			final String lat = arg1.get("mLatitude").getAsString();
-			final String lon = arg1.get("mLongitude").getAsString();
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					locationText.setText(networkType + ": " + lat + ", " + lon);
-				}
-			});
-		} else if (type.equals("com.example.autovol.ActivityProbe")) {
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					activityText.setText(arg1.get(ActivityProbe.ACTIVITY_NAME).getAsString());
-				}
-			});
-		} else if (type.equals("com.example.autovol.AudioProbe")) {
-			final int audioType = arg1.get(AudioProbe.AUDIO_TYPE).getAsInt();
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					switch (audioType) {
-					case AudioManager.AUDIO_SILENCE:
-						audioText.setText("silence");
-						break;
-					case AudioManager.AUDIO_NOISE:
-						audioText.setText("noise");
-						break;
-					case AudioManager.AUDIO_VOICE:
-						audioText.setText("voice");
-						break;
-					case AudioManager.AUDIO_ERROR:
-						audioText.setText("err");
-						break;
-					}
-				}
-			});
-		}
 	}
 	
     private boolean servicesConnected() {

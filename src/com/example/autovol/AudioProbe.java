@@ -1,20 +1,24 @@
 package com.example.autovol;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.media.AudioFormat;
 import android.util.Log;
 
 import com.google.gson.JsonObject;
 
-import edu.mit.media.funf.Schedule;
 import edu.mit.media.funf.probe.Probe.Base;
 import edu.mit.media.funf.probe.Probe.PassiveProbe;
 
-//TODO: fix these
-@Schedule.DefaultSchedule(interval=60, duration=20)
 public class AudioProbe extends Base implements PassiveProbe {
 	
 	private AudioManager audioManager;
@@ -22,9 +26,30 @@ public class AudioProbe extends Base implements PassiveProbe {
 	private ScheduledExecutorService executor;
 	
 	public static final String AUDIO_TYPE = "audio_type";
-	private static final int RUN_TIME = 20;
-	private static final int PAUSE_TIME = 5 * 60 - 20;
+	private static final int DURATION = 20;
+	private static final int INTERVAL_SECONDS = 5 * 60;
+	private static final int INTERVAL_MILLIS = INTERVAL_SECONDS * 1000;
 	private volatile boolean recording = false;
+	
+	
+	private AlarmManager alarmMan;
+	private PendingIntent alarmIntent;
+	
+	private class AlarmReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			executor.submit(startRecording);
+			ScheduledFuture<?> stopTask = executor.schedule(stopRecording, DURATION,
+					TimeUnit.SECONDS);
+			try {
+				stopTask.get();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 	
 	private final Runnable startRecording = new Runnable() {
 		@Override
@@ -34,7 +59,7 @@ public class AudioProbe extends Base implements PassiveProbe {
 			//audioManager.startRecording();
 			audioManager.start();
 			recording = true;
-			executor.schedule(stopRecording, RUN_TIME, TimeUnit.SECONDS);
+			//executor.schedule(stopRecording, RUN_TIME, TimeUnit.SECONDS);
 		}
 	};
 	
@@ -50,7 +75,7 @@ public class AudioProbe extends Base implements PassiveProbe {
 			data.addProperty(AUDIO_TYPE, inference);
 			sendData(data);
 			Log.d("AudioProbe", "Stopped, inference: " + inference);
-			executor.schedule(startRecording, PAUSE_TIME, TimeUnit.SECONDS);
+			//executor.schedule(startRecording, PAUSE_TIME, TimeUnit.SECONDS);
 		}
 	};
 
@@ -72,7 +97,14 @@ public class AudioProbe extends Base implements PassiveProbe {
 		
 		Log.d("AudioProbe", "submitting run runnable");
 		executor = Executors.newScheduledThreadPool(1);
-		executor.submit(startRecording);
+		//executor.submit(startRecording);
+		
+		Intent intent = new Intent(getContext(), AlarmReceiver.class);
+		alarmIntent = PendingIntent.getBroadcast(getContext(), 0, intent, 0);
+		alarmMan = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
+		alarmMan.setInexactRepeating(AlarmManager.RTC_WAKEUP, 
+				System.currentTimeMillis(),
+				INTERVAL_MILLIS, alarmIntent);
     }
 
     /**
@@ -116,6 +148,7 @@ public class AudioProbe extends Base implements PassiveProbe {
 			executor.shutdownNow();
 		}
 		audioManager = null;
+		alarmMan.cancel(alarmIntent);
 		super.onDisable();
     }
 }

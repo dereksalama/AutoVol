@@ -243,9 +243,15 @@ public class CurrentState implements DataListener {
 			Log.e("CurrentState", "PROBE NOT RECOGNIZED!!");
 		}
 		
-		//TODO: this is kinda hacky
-		Intent broadcastIntent = new Intent(NEW_STATE_BROADCAST);
-		context.sendBroadcast(broadcastIntent);
+
+		if (typesWaitingInit.isEmpty()){
+			//TODO: this is kinda hacky
+			Log.d("CurrentState", "State updated");
+			Intent broadcastIntent = new Intent(NEW_STATE_BROADCAST);
+			context.sendBroadcast(broadcastIntent);
+		} else {
+			Log.d("CurrentState", "State still incomplete");
+		}
 	}
 	
 	private void addValue(String probeValueName, double value) {

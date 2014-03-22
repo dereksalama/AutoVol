@@ -1,12 +1,18 @@
 package com.example.autovol;
 
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -15,15 +21,13 @@ import android.util.Log;
 
 import com.google.gson.JsonObject;
 
-import edu.mit.media.funf.Schedule;
 import edu.mit.media.funf.probe.Probe.Base;
 import edu.mit.media.funf.probe.Probe.PassiveProbe;
 
-//TODO: fix these
-@Schedule.DefaultSchedule(interval=60, duration=2)
 public class MyLightSensorProbe extends Base implements PassiveProbe {
 	
-	private static final int INTERVAL = 50;
+	private static final int INTERVAL_SECONDS = 60 * 2;
+	private static final int INTERVAL_MILLIS = INTERVAL_SECONDS * 1000;
 	private static final int DURATION = 2;
 	
 	private ScheduledExecutorService executor;
@@ -32,9 +36,28 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 	private Sensor sensor;
 	private SensorEventListener sensorListener;
 	
+	private AlarmManager alarmMan;
+	private PendingIntent alarmIntent;
+	
 	private ArrayList<Float> measurements;
 	
 	private final AtomicBoolean running = new AtomicBoolean(false);
+	
+	private class AlarmReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			executor.submit(startRecording);
+			ScheduledFuture<?> stopTask = executor.schedule(stopRecording, DURATION,
+					TimeUnit.SECONDS);
+			try {
+				stopTask.get();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 	
 	private final Runnable startRecording = new Runnable() {
 		@Override
@@ -42,7 +65,6 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 			Log.d("MyLightSensorProbe", "start");
 			if (!running.getAndSet(true)) {
 				sensorManager.registerListener(sensorListener, sensor, SensorManager.SENSOR_DELAY_NORMAL);
-				executor.schedule(stopRecording, DURATION, TimeUnit.SECONDS);
 			}
 		}
 	};
@@ -62,7 +84,6 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 				data.addProperty("lux", avg);
 				sendData(data);
 				measurements.clear();
-				executor.schedule(startRecording, INTERVAL, TimeUnit.SECONDS);
 			}
 		}
 	};
@@ -88,7 +109,14 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 		};
 		
 		executor = Executors.newScheduledThreadPool(1);
-		executor.submit(startRecording);
+		//executor.submit(startRecording);
+		
+		Intent intent = new Intent(getContext(), AlarmReceiver.class);
+		alarmIntent = PendingIntent.getBroadcast(getContext(), 0, intent, 0);
+		alarmMan = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
+		alarmMan.setInexactRepeating(AlarmManager.RTC_WAKEUP, 
+				System.currentTimeMillis(),
+				INTERVAL_MILLIS, alarmIntent);
 	}
 	
 	@Override
@@ -105,17 +133,12 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 		} else {
 			executor.shutdownNow();
 		}
+		alarmMan.cancel(alarmIntent);
 		super.onStop();
 	}
 	
 	@Override
     protected void onDisable() {
-		if (running.get()) {
-			executor.submit(stopRecording);
-			executor.shutdown();
-		} else {
-			executor.shutdownNow();
-		}
 		super.onDisable();
 	}
 	
