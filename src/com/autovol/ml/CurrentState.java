@@ -1,14 +1,16 @@
 package com.autovol.ml;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
-import weka.core.Attribute;
 import weka.core.Instance;
 import android.content.Context;
 import android.content.Intent;
@@ -28,7 +30,6 @@ import edu.mit.media.funf.probe.Probe.DataListener;
 import edu.mit.media.funf.probe.builtin.BatteryProbe;
 import edu.mit.media.funf.probe.builtin.BluetoothProbe;
 import edu.mit.media.funf.probe.builtin.ProximitySensorProbe;
-import edu.mit.media.funf.probe.builtin.RunningApplicationsProbe;
 import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
 import edu.mit.media.funf.probe.builtin.WifiProbe;
 
@@ -36,15 +37,14 @@ public class CurrentState implements DataListener {
 	
 	public static final String NEW_STATE_BROADCAST = "new_state";
 	
-	Map<String, Double> values = new HashMap<String, Double>(TYPES_NEEDING_INIT.length);
+	Map<String, Double> values = new ConcurrentHashMap<String, Double>(TYPES_NEEDING_INIT.length);
 	private static final String[] TYPES_NEEDING_INIT = { "lat" , "long",
-		"loc_provider", "activity_confidence", "light", "distance", "wifi_count", "charging",
-		"ringer"};
-	private Set<String> typesWaitingInit = new HashSet<String>(Arrays.asList(TYPES_NEEDING_INIT));
+		"loc_provider", "activity_confidence", "light", "distance", "wifi_count", "charging"};
+	private Set<String> typesWaitingInit;
 	
 	private static final int WIFI_WAIT_PERIOD = 15;
-	private int lastWifiTime = 0;
-	private final Set<String> visibleWifis = new HashSet<String>(10);
+	private volatile int lastWifiTime = 0;
+	private final Set<String> visibleWifis = Collections.synchronizedSet(new HashSet<String>(10));
 	
 	private final Context context;
 	
@@ -89,11 +89,25 @@ public class CurrentState implements DataListener {
 		"audio_error"
 	};
 	
+	private static final List<String> ALL_TYPES;
+	static {
+		ALL_TYPES = new ArrayList<String>(15);
+		ALL_TYPES.add("day");
+		ALL_TYPES.add("time");
+		ALL_TYPES.addAll(Arrays.asList(TYPES_NEEDING_INIT));
+		ALL_TYPES.addAll(Arrays.asList(ACTIVITY_NAMES));
+		ALL_TYPES.addAll(Arrays.asList(AUDIO_NAMES));
+	}
+	
+	
 	final int numAtts;
 	public CurrentState(Context context) {
 		this.context = context;
 		// 2 for day/time
-		numAtts = typesWaitingInit.size() + ACTIVITY_NAMES.length + AUDIO_NAMES.length + 2;
+		numAtts = ALL_TYPES.size();
+		
+		typesWaitingInit = Collections.synchronizedSet(new HashSet<String>(TYPES_NEEDING_INIT.length));
+		typesWaitingInit.addAll(Arrays.asList(TYPES_NEEDING_INIT));
 	}
 	
 	public void enable(FunfManager funfManager) {
@@ -145,17 +159,28 @@ public class CurrentState implements DataListener {
 		} else {
 			convertedDayOfWeek = dayOfWeek - 2;
 		}
-		Attribute day = new Attribute("day");
-		inst.setValue(day, convertedDayOfWeek);
+		values.put("day", (double) convertedDayOfWeek);
 		
 		int minuteIntoDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
-		Attribute time = new Attribute("time");
-		inst.setValue(time, minuteIntoDay);
+		values.put("time", (double) minuteIntoDay);
 
+		for (int i = 0; i < ALL_TYPES.size(); i++) {
+			String attr = ALL_TYPES.get(i);
+			Double val = values.get(attr);
+			if (val != null) {
+				inst.setValue(i, val);
+			} else {
+				Log.d("CurrentState", "no value for " + attr);
+				inst.setValue(i, 0.0);
+			}
+
+		}
+		/*
 		for (Entry<String, Double> e : values.entrySet()) {
 			Attribute attr = new Attribute(e.getKey());
 			inst.setValue(attr, e.getValue());
 		}
+		*/
 		return inst;
 	}
 
