@@ -45,4 +45,13 @@
         android:layout_toRightOf="@+id/textView1"
         android:text="Not enough data" />
 
+    <Button
+        android:id="@+id/classify_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/classify_checkbox"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="25dp"
+        android:text="Classify" />
+
 </RelativeLayout>

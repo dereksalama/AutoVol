@@ -1,28 +1,37 @@
 package com.example.autovol;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
-import weka.core.Instance;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.autovol.ml.CurrentState;
-import com.autovol.ml.SvmClassifier;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;
@@ -39,7 +48,8 @@ import edu.mit.media.funf.probe.builtin.WifiProbe;
 
 public class MainActivity extends Activity {
 	
-	private static final String CSV_FILE_NAME = "labeled_output.csv";
+	private static final String BASE_URL = "http://10.0.1.17:8080";
+	private static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
 	public static final String PIPELINE_NAME = "default";
 	public static final int ARCHIVE_DELAY = 15 * 60;
 	private FunfManager funfManager;
@@ -56,10 +66,10 @@ public class MainActivity extends Activity {
 	private RingerVolumeProbe ringerProbe;
 	
 	private CurrentState currentState;
-	private SvmClassifier svm;
 	
 	private CheckBox enabledBox, classifyBox;
 	private TextView suggestionText;
+	private Button classifyButton;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
 	    @Override
 	    public void onServiceConnected(ComponentName name, IBinder service) {
@@ -101,6 +111,7 @@ public class MainActivity extends Activity {
 	        enabledBox.setEnabled(true);
 	        classifyBox.setChecked(false);
 	        classifyBox.setEnabled(true);
+	        currentState.enable(funfManager);
 	    }
 	    
 	    @Override
@@ -109,49 +120,6 @@ public class MainActivity extends Activity {
 	    }
 	};
 	
-	private void loadClassificationData() throws IOException {
-		/*
-	    CSVLoader loader = new CSVLoader();
-	    InputStream is = getResources().getAssets().open("data/" + CSV_FILE_NAME);
-
-	    loader.setSource(is);
-	    Instances data = loader.getDataSet();
-		svm = SvmClassifier.createSvmClassifier(data);
-		*/
-		InputStream is = getResources().getAssets().open("models/smo_model.model");
-		svm = SvmClassifier.loadSvmClassifier(is);
-		is.close();
-	}
-	
-	private BroadcastReceiver classifyReceiver = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			Instance obs = currentState.toInstance();
-			try {
-				int classification = (int) Math.round(svm.classify(obs));
-				classification -= 1; // Translate back to android type
-				switch (classification) {
-				case android.media.AudioManager.RINGER_MODE_NORMAL:
-					suggestionText.setText("on");
-					break;
-				case android.media.AudioManager.RINGER_MODE_VIBRATE:
-					suggestionText.setText("vibrate");
-					break;
-				case android.media.AudioManager.RINGER_MODE_SILENT:
-					suggestionText.setText("silent");
-					break;
-				default:
-					Log.e("MainActivity", "Unknown ringer type");
-				}
-			} catch (Exception e) {
-				Log.e("MainActivity", "Error classifying");
-				e.printStackTrace();
-			}
-			
-		}
-		
-	};
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -185,25 +153,23 @@ public class MainActivity extends Activity {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 				if (isChecked) {
-					try {
-						loadClassificationData();
-						currentState.enable(funfManager);
-					} catch (IOException e) {
-						Log.e("MainActivity", "failed to load csv data");
-						e.printStackTrace();
-						classifyBox.setChecked(false);
-					}
+					currentState.enable(funfManager);
+
 				} else {
 					currentState.disable(funfManager);
 				}
 			}
 		});
 		
-		suggestionText = (TextView) findViewById(R.id.ringer_suggestion_text);
+		classifyButton = (Button) findViewById(R.id.classify_button);
+		classifyButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				remoteClassify();
+			}
+		});
 		
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(CurrentState.NEW_STATE_BROADCAST);
-        registerReceiver(classifyReceiver, filter);
+		suggestionText = (TextView) findViewById(R.id.ringer_suggestion_text);
 	    
 	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
 	    
@@ -241,6 +207,60 @@ public class MainActivity extends Activity {
         } else {
             return false;
         }
+    }
+    
+    private void remoteClassify() {
+    	if (!currentState.dataIsReady()) {
+    		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
+    		return;
+    	}
+    	String reqUrl = SMO_URL + "?" + currentState.requestParamString();
+    	
+    	new AsyncTask<String, Void, Double>() {
+
+			@Override
+			protected Double doInBackground(String... urls) {
+				HttpURLConnection urlConnection = null;
+			    try {
+			    	URL url = new URL(urls[0]);
+			    	urlConnection = (HttpURLConnection) url.openConnection();
+			      InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+			      BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, "UTF-8")); 
+			      StringBuilder responseStrBuilder = new StringBuilder();
+
+			      String inputStr;
+			      while ((inputStr = streamReader.readLine()) != null)
+			          responseStrBuilder.append(inputStr);
+			      
+			      JSONObject result = new JSONObject(responseStrBuilder.toString());
+			      Double ringer = result.getDouble("ringer_type");
+			      return ringer;
+			    } catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} finally {
+			    	if (urlConnection != null)
+			    		urlConnection.disconnect();
+			    }
+				
+			    return null;
+			}
+			
+			@Override
+			protected void onPostExecute(Double result) {
+				if (result != null) {
+					suggestionText.setText(result.toString());
+				}
+			}
+    		
+		}.execute(reqUrl);
+
     }
 
 }

@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import weka.core.Instance;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
@@ -76,7 +75,7 @@ public class CurrentState implements DataListener {
 	
 	private static final String[] ACTIVITY_NAMES = {
 		"activity_vehicle",
-		"activity_bicycle",
+		"activity_bike",
 		"activity_foot",
 		"activity_still",
 		"activity_unknown",
@@ -149,8 +148,12 @@ public class CurrentState implements DataListener {
 		return enabled;
 	}
 	
-	public Instance toInstance() {
-		Instance inst = new Instance(numAtts);
+	public boolean dataIsReady() {
+		return typesWaitingInit.size() == 0;
+	}
+	
+	public String requestParamString() {
+		// update time & date info
 		Calendar cal = Calendar.getInstance();
 		int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
 		int convertedDayOfWeek = 0;
@@ -160,28 +163,23 @@ public class CurrentState implements DataListener {
 			convertedDayOfWeek = dayOfWeek - 2;
 		}
 		values.put("day", (double) convertedDayOfWeek);
-		
+
 		int minuteIntoDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
 		values.put("time", (double) minuteIntoDay);
-
-		for (int i = 0; i < ALL_TYPES.size(); i++) {
-			String attr = ALL_TYPES.get(i);
-			Double val = values.get(attr);
+		
+		StringBuilder builder = new StringBuilder();
+		for (String type : ALL_TYPES) {
+			Double val = values.get(type);
+			builder.append(type + "=");
 			if (val != null) {
-				inst.setValue(i, val);
+				builder.append(val);
 			} else {
-				Log.d("CurrentState", "no value for " + attr);
-				inst.setValue(i, 0.0);
+				builder.append(0.0);
 			}
-
+			builder.append("&");
 		}
-		/*
-		for (Entry<String, Double> e : values.entrySet()) {
-			Attribute attr = new Attribute(e.getKey());
-			inst.setValue(attr, e.getValue());
-		}
-		*/
-		return inst;
+		builder.deleteCharAt(builder.length() - 1); // remove trailing &
+		return builder.toString();
 	}
 
 	@Override
