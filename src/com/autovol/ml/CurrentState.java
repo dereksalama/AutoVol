@@ -42,7 +42,7 @@ public class CurrentState implements DataListener {
 	private Set<String> typesWaitingInit;
 	
 	private static final int WIFI_WAIT_PERIOD = 15;
-	private volatile int lastWifiTime = 0;
+	private volatile long lastWifiTime = 0;
 	private final Set<String> visibleWifis = Collections.synchronizedSet(new HashSet<String>(10));
 	
 	private final Context context;
@@ -91,7 +91,7 @@ public class CurrentState implements DataListener {
 	private static final List<String> ALL_TYPES;
 	static {
 		ALL_TYPES = new ArrayList<String>(15);
-		ALL_TYPES.add("day");
+		//ALL_TYPES.add("day");
 		ALL_TYPES.add("time");
 		ALL_TYPES.addAll(Arrays.asList(TYPES_NEEDING_INIT));
 		ALL_TYPES.addAll(Arrays.asList(ACTIVITY_NAMES));
@@ -99,11 +99,8 @@ public class CurrentState implements DataListener {
 	}
 	
 	
-	final int numAtts;
 	public CurrentState(Context context) {
 		this.context = context;
-		// 2 for day/time
-		numAtts = ALL_TYPES.size();
 		
 		typesWaitingInit = Collections.synchronizedSet(new HashSet<String>(TYPES_NEEDING_INIT.length));
 		typesWaitingInit.addAll(Arrays.asList(TYPES_NEEDING_INIT));
@@ -113,7 +110,7 @@ public class CurrentState implements DataListener {
         Gson gson = funfManager.getGson();
         locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
         activityProbe = gson.fromJson(new JsonObject(), ActivityProbe.class);
-        audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
+        //audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
         bluetoothProbe = gson.fromJson(new JsonObject(), BluetoothProbe.class);
         lightProbe = gson.fromJson(new JsonObject(), MyLightSensorProbe.class);
         wifiProbe = gson.fromJson(new JsonObject(), WifiProbe.class);
@@ -126,7 +123,7 @@ public class CurrentState implements DataListener {
         funfManager.requestData(this, bluetoothProbe.getConfig());
         
         lightProbe.registerPassiveListener(this);
-        audioProbe.registerPassiveListener(this);
+        //audioProbe.registerPassiveListener(this);
         
         funfManager.requestData(this, wifiProbe.getConfig());
         funfManager.requestData(this, proximityProbe.getConfig());
@@ -155,6 +152,8 @@ public class CurrentState implements DataListener {
 	public String requestParamString() {
 		// update time & date info
 		Calendar cal = Calendar.getInstance();
+		
+		/* Skipping day of week for now
 		int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
 		int convertedDayOfWeek = 0;
 		if (dayOfWeek == Calendar.SUNDAY) {
@@ -163,6 +162,7 @@ public class CurrentState implements DataListener {
 			convertedDayOfWeek = dayOfWeek - 2;
 		}
 		values.put("day", (double) convertedDayOfWeek);
+		*/
 
 		int minuteIntoDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
 		values.put("time", (double) minuteIntoDay);
@@ -237,6 +237,7 @@ public class CurrentState implements DataListener {
 		} else if (probeType.endsWith("WifiProbe")) {
 			long currentTimeInSeconds = System.currentTimeMillis() / 1000;
 			long timeSinceLastUpdate = currentTimeInSeconds - lastWifiTime;
+			lastWifiTime = currentTimeInSeconds;
 			if (timeSinceLastUpdate > WIFI_WAIT_PERIOD) {
 				visibleWifis.clear();
 			}

@@ -47,8 +47,12 @@ import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
 import edu.mit.media.funf.probe.builtin.WifiProbe;
 
 public class MainActivity extends Activity {
+	// Local host
+	//private static final String BASE_URL = "http://10.0.1.17:8080";
 	
-	private static final String BASE_URL = "http://10.0.1.17:8080";
+	// AWS host
+	private static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
+	
 	private static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
 	public static final String PIPELINE_NAME = "default";
 	public static final int ARCHIVE_DELAY = 15 * 60;
@@ -83,7 +87,7 @@ public class MainActivity extends Activity {
 	        Gson gson = funfManager.getGson();
 	        locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
 	        activityProbe = gson.fromJson(new JsonObject(), ActivityProbe.class);
-	        audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
+	        //audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
 	        bluetoothProbe = gson.fromJson(new JsonObject(), BluetoothProbe.class);
 	        lightProbe = gson.fromJson(new JsonObject(), MyLightSensorProbe.class);
 	        wifiProbe = gson.fromJson(new JsonObject(), WifiProbe.class);
@@ -97,7 +101,7 @@ public class MainActivity extends Activity {
 	        
 	        //TODO: see if this fixes
 	        lightProbe.registerPassiveListener(pipeline);
-	        audioProbe.registerPassiveListener(pipeline);
+	        //audioProbe.registerPassiveListener(pipeline);
 	        
 	        funfManager.requestData(pipeline, wifiProbe.getConfig());
 	        funfManager.requestData(pipeline, proximityProbe.getConfig());
@@ -256,6 +260,7 @@ public class MainActivity extends Activity {
 			protected void onPostExecute(Double result) {
 				if (result != null) {
 					suggestionText.setText(result.toString());
+					Toast.makeText(MainActivity.this, "New Suggestion: " + result.toString(), Toast.LENGTH_SHORT).show();
 				}
 			}
     		
