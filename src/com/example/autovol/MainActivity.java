@@ -31,7 +31,7 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.autovol.ml.CurrentState;
+import com.autovol.ml.CurrentStateListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;
@@ -54,22 +54,10 @@ public class MainActivity extends Activity {
 	private static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
 	
 	private static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
-	public static final String PIPELINE_NAME = "default";
-	public static final int ARCHIVE_DELAY = 15 * 60;
+
 	private FunfManager funfManager;
-	private BasicPipeline pipeline;
-	
-	private SimpleLocationProbe locationProbe;
-	private ActivityProbe activityProbe;
-	private AudioProbe audioProbe;
-	private BluetoothProbe bluetoothProbe;
-	private MyLightSensorProbe lightProbe;
-	private WifiProbe wifiProbe;
-	private ProximitySensorProbe proximityProbe;
-	private BatteryProbe batteryProbe;
-	private RingerVolumeProbe ringerProbe;
-	
-	private CurrentState currentState;
+
+	private CurrentStateListener currentState;
 	
 	private CheckBox enabledBox, classifyBox;
 	private TextView suggestionText;
@@ -79,40 +67,10 @@ public class MainActivity extends Activity {
 	    public void onServiceConnected(ComponentName name, IBinder service) {
 	    	Log.d("MainActivity", "onServiceConnected");
 	        funfManager = ((FunfManager.LocalBinder)service).getManager();
-	        pipeline = new BasicPipeline();
-	        funfManager.registerPipeline(PIPELINE_NAME, pipeline);
-	        funfManager.enablePipeline(PIPELINE_NAME);
-	        
-	        
-	        Gson gson = funfManager.getGson();
-	        locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
-	        activityProbe = gson.fromJson(new JsonObject(), ActivityProbe.class);
-	        //audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
-	        bluetoothProbe = gson.fromJson(new JsonObject(), BluetoothProbe.class);
-	        lightProbe = gson.fromJson(new JsonObject(), MyLightSensorProbe.class);
-	        wifiProbe = gson.fromJson(new JsonObject(), WifiProbe.class);
-	        proximityProbe = gson.fromJson(new JsonObject(),ProximitySensorProbe.class);
-	        batteryProbe = gson.fromJson(new JsonObject(), BatteryProbe.class);
-	        ringerProbe = gson.fromJson(new JsonObject(), RingerVolumeProbe.class);
-	        
-	        funfManager.requestData(pipeline, locationProbe.getConfig());
-	        activityProbe.registerPassiveListener(pipeline); //scheduling in probe
-	        funfManager.requestData(pipeline, bluetoothProbe.getConfig());
-	        
-	        //TODO: see if this fixes
-	        lightProbe.registerPassiveListener(pipeline);
-	        //audioProbe.registerPassiveListener(pipeline);
-	        
-	        funfManager.requestData(pipeline, wifiProbe.getConfig());
-	        funfManager.requestData(pipeline, proximityProbe.getConfig());
-	        funfManager.requestData(pipeline, batteryProbe.getConfig());
-	        ringerProbe.registerPassiveListener(pipeline);
-	        
-	        funfManager.registerPipelineAction(pipeline, BasicPipeline.ACTION_ARCHIVE, 
-	        		new Schedule.BasicSchedule(new BigDecimal(ARCHIVE_DELAY), null, false, false));
-	        
-	        enabledBox.setChecked(pipeline.isEnabled());
-	        enabledBox.setEnabled(true);
+
+	        //TODO: upload shit
+	        //enabledBox.setChecked(pipeline.isEnabled());
+	        //enabledBox.setEnabled(true);
 	        classifyBox.setChecked(false);
 	        classifyBox.setEnabled(true);
 	        currentState.enable(funfManager);
@@ -130,7 +88,7 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		currentState = new CurrentState(this);
+		currentState = new CurrentStateListener();
 		
 		enabledBox = (CheckBox) findViewById(R.id.enabled_checkbox);
 		enabledBox.setEnabled(false);
@@ -138,14 +96,7 @@ public class MainActivity extends Activity {
 			
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (funfManager != null) {
-                    if (isChecked) {
-                        funfManager.enablePipeline(PIPELINE_NAME);
-                        pipeline = (BasicPipeline) funfManager.getRegisteredPipeline(PIPELINE_NAME);
-                    } else {
-                        funfManager.disablePipeline(PIPELINE_NAME);
-                    }
-                }
+             //TODO
 			}
 		});
 		
@@ -183,7 +134,6 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onDestroy() {
 		currentState.disable(funfManager);
-		funfManager.disablePipeline(PIPELINE_NAME);
 		unbindService(funfManagerConn);
 		super.onDestroy();
 	}
@@ -218,7 +168,7 @@ public class MainActivity extends Activity {
     		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
     		return;
     	}
-    	String reqUrl = SMO_URL + "?" + currentState.requestParamString();
+    	String reqUrl = SMO_URL + "?" + "state=" + currentState.currentStateJson();
     	
     	new AsyncTask<String, Void, Double>() {
 
