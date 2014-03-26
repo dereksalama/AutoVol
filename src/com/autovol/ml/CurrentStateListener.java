@@ -1,11 +1,22 @@
 package com.autovol.ml;
 
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import android.content.Context;
 import android.util.Log;
 
 import com.autovol.CurrentStateData;
@@ -25,8 +36,7 @@ import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
 import edu.mit.media.funf.probe.builtin.WifiProbe;
 
 public class CurrentStateListener implements DataListener {
-	
-	public static final String NEW_STATE_BROADCAST = "new_state";
+	private static final String SAVED_FILE = "saved_observations";
 	
 	private static final int WIFI_WAIT_PERIOD = 15;
 	private volatile long lastWifiTime = 0;
@@ -41,10 +51,9 @@ public class CurrentStateListener implements DataListener {
 	private RingerVolumeProbe ringerProbe;
 	
 	private volatile boolean enabled = false;
-	private volatile boolean uploadEnabled = false; //TODO: upload shit
 	
 	private CurrentStateData currentState;
-	private Set<CurrentStateData> statesWaitingTransmission = Collections.synchronizedSet(
+	private Set<CurrentStateData> savedStates = Collections.synchronizedSet(
 			new HashSet<CurrentStateData>());
 	
 	
@@ -201,12 +210,11 @@ public class CurrentStateListener implements DataListener {
 			Log.e("CurrentState", "PROBE NOT RECOGNIZED!! -> " + probeType);
 		}
 		
-
 		if (typesWaitingInit.isEmpty()){
 			Log.d("CurrentState", "State updated");
 			if (currentState.getTime() < minutesIntoDay()) {
 				Log.d("CurrentState", "Minute elapsed, creating new data obj");
-				statesWaitingTransmission.add(currentState);
+				savedStates.add(currentState);
 				currentState = new CurrentStateData();
 			}
 		} else {
@@ -214,4 +222,75 @@ public class CurrentStateListener implements DataListener {
 		}
 	}
 	
+	// Convert all states in memory to GSON serialization string
+	private String serializeRecentObservations() {
+		Gson gson = new Gson();
+		String result =  gson.toJson(savedStates);
+		savedStates.clear();
+		return result;
+	}
+	
+	public void saveRecentObservations(Context c) {
+		OutputStream outputStream;
+		try {
+			outputStream = new BufferedOutputStream(
+					c.openFileOutput(SAVED_FILE, Context.MODE_APPEND));
+			String json = serializeRecentObservations();
+			outputStream.write(json.getBytes());
+			outputStream.close();
+			savedStates.clear();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	//TODO: check wifi availability, battery
+	//Should be done in background
+	public void uploadSavedObservations(String uploadUrl, Context c) {
+		HttpURLConnection conn = null;
+		FileInputStream fileInput = null;
+		DataOutputStream outputStream = null;
+
+		int bytesRead, bytesAvailable, bufferSize;
+		byte[] buffer;
+		int maxBufferSize = 1*1024*1024;
+
+		try {
+			fileInput = c.openFileInput(SAVED_FILE);
+
+			URL url = new URL(uploadUrl);
+			conn = (HttpURLConnection) url.openConnection();
+			conn.setDoOutput(true);
+			conn.setChunkedStreamingMode(0);
+			conn.setRequestProperty("Connection", "Keep-Alive");
+
+			outputStream = new DataOutputStream(conn.getOutputStream());
+			
+			bytesAvailable = fileInput.available();
+			bufferSize = Math.min(bytesAvailable, maxBufferSize);
+			buffer = new byte[bufferSize];
+			
+			bytesRead = fileInput.read(buffer, 0, bufferSize);
+			while (bytesRead > 0) {
+				outputStream.write(buffer);
+				bytesAvailable = fileInput.available();
+				bufferSize = Math.min(bytesAvailable, maxBufferSize);
+				bytesRead = fileInput.read(buffer, 0, bufferSize);
+			}
+			int serverResponseCode = conn.getResponseCode();
+			fileInput.close();
+			if (serverResponseCode == HttpURLConnection.HTTP_ACCEPTED) {
+				File savedFile = new File(c.getFilesDir(), SAVED_FILE);
+				savedFile.delete();
+			}
+			outputStream.flush();
+			outputStream.close();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }
