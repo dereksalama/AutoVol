@@ -5,7 +5,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,41 +24,26 @@ import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.autovol.ml.CurrentStateListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.FunfManager;
-import edu.mit.media.funf.Schedule;
-import edu.mit.media.funf.pipeline.BasicPipeline;
-import edu.mit.media.funf.probe.builtin.BatteryProbe;
-import edu.mit.media.funf.probe.builtin.BluetoothProbe;
-import edu.mit.media.funf.probe.builtin.ProximitySensorProbe;
-import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
-import edu.mit.media.funf.probe.builtin.WifiProbe;
 
 public class MainActivity extends Activity {
 	// Local host
 	//private static final String BASE_URL = "http://10.0.1.17:8080";
 	
 	// AWS host
-	private static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
+	public static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
 	
 	private static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
 
 	private FunfManager funfManager;
-
-	private CurrentStateListener currentState;
 	
-	private CheckBox enabledBox, classifyBox;
 	private TextView suggestionText;
 	private Button classifyButton;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
@@ -68,12 +52,10 @@ public class MainActivity extends Activity {
 	    	Log.d("MainActivity", "onServiceConnected");
 	        funfManager = ((FunfManager.LocalBinder)service).getManager();
 
-	        //TODO: upload shit
-	        //enabledBox.setChecked(pipeline.isEnabled());
-	        //enabledBox.setEnabled(true);
-	        classifyBox.setChecked(false);
-	        classifyBox.setEnabled(true);
-	        currentState.enable(funfManager);
+	        CurrentStateListener.getListener().enable(funfManager);
+	        
+	        ArchiveAlarm.scheduleRepeatedArchive(MainActivity.this);
+	        UploadAlarm.scheduleDailyUpload(MainActivity.this);
 	    }
 	    
 	    @Override
@@ -87,34 +69,6 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
-		currentState = new CurrentStateListener();
-		
-		enabledBox = (CheckBox) findViewById(R.id.enabled_checkbox);
-		enabledBox.setEnabled(false);
-		enabledBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-			
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-             //TODO
-			}
-		});
-		
-		classifyBox = (CheckBox) findViewById(R.id.classify_checkbox);
-		classifyBox.setChecked(false);
-		classifyBox.setEnabled(false);
-		classifyBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-			
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				if (isChecked) {
-					currentState.enable(funfManager);
-
-				} else {
-					currentState.disable(funfManager);
-				}
-			}
-		});
 		
 		classifyButton = (Button) findViewById(R.id.classify_button);
 		classifyButton.setOnClickListener(new OnClickListener() {
@@ -133,7 +87,7 @@ public class MainActivity extends Activity {
 	
 	@Override
 	protected void onDestroy() {
-		currentState.disable(funfManager);
+		CurrentStateListener.getListener().disable(funfManager);
 		unbindService(funfManagerConn);
 		super.onDestroy();
 	}
@@ -164,11 +118,12 @@ public class MainActivity extends Activity {
     }
     
     private void remoteClassify() {
-    	if (!currentState.dataIsReady()) {
+    	if (!CurrentStateListener.getListener().dataIsReady()) {
     		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
     		return;
     	}
-    	String reqUrl = SMO_URL + "?" + "state=" + currentState.currentStateJson();
+    	//TODO: this is not currently going to work
+    	String reqUrl = SMO_URL + "?" + "state=" + CurrentStateListener.getListener().currentStateJson();
     	
     	new AsyncTask<String, Void, Double>() {
 
@@ -215,7 +170,5 @@ public class MainActivity extends Activity {
 			}
     		
 		}.execute(reqUrl);
-
     }
-
 }

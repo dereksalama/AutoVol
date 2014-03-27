@@ -1,15 +1,9 @@
 package com.autovol.ml;
 
 import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -36,7 +30,7 @@ import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
 import edu.mit.media.funf.probe.builtin.WifiProbe;
 
 public class CurrentStateListener implements DataListener {
-	private static final String SAVED_FILE = "saved_observations";
+	public static final String SAVED_FILE = "saved_observations";
 	
 	private static final int WIFI_WAIT_PERIOD = 15;
 	private volatile long lastWifiTime = 0;
@@ -62,7 +56,12 @@ public class CurrentStateListener implements DataListener {
 		"activity_type", "ringer"};
 	private Set<String> typesWaitingInit;
 	
-	public CurrentStateListener() {
+	private static CurrentStateListener INSTANCE = new CurrentStateListener();
+	public static CurrentStateListener getListener() {
+		return INSTANCE;
+	}
+	
+	private CurrentStateListener() {
 		currentState = new CurrentStateData();
 		currentState.setTime(minutesIntoDay());
 		typesWaitingInit = Collections.synchronizedSet(new HashSet<String>(TYPES_NEEDING_INIT.length));
@@ -240,54 +239,6 @@ public class CurrentStateListener implements DataListener {
 			outputStream.close();
 			savedStates.clear();
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	//TODO: check wifi availability, battery
-	//Should be done in background
-	public void uploadSavedObservations(String uploadUrl, Context c) {
-		HttpURLConnection conn = null;
-		FileInputStream fileInput = null;
-		DataOutputStream outputStream = null;
-
-		int bytesRead, bytesAvailable, bufferSize;
-		byte[] buffer;
-		int maxBufferSize = 1*1024*1024;
-
-		try {
-			fileInput = c.openFileInput(SAVED_FILE);
-
-			URL url = new URL(uploadUrl);
-			conn = (HttpURLConnection) url.openConnection();
-			conn.setDoOutput(true);
-			conn.setChunkedStreamingMode(0);
-			conn.setRequestProperty("Connection", "Keep-Alive");
-
-			outputStream = new DataOutputStream(conn.getOutputStream());
-			
-			bytesAvailable = fileInput.available();
-			bufferSize = Math.min(bytesAvailable, maxBufferSize);
-			buffer = new byte[bufferSize];
-			
-			bytesRead = fileInput.read(buffer, 0, bufferSize);
-			while (bytesRead > 0) {
-				outputStream.write(buffer);
-				bytesAvailable = fileInput.available();
-				bufferSize = Math.min(bytesAvailable, maxBufferSize);
-				bytesRead = fileInput.read(buffer, 0, bufferSize);
-			}
-			int serverResponseCode = conn.getResponseCode();
-			fileInput.close();
-			if (serverResponseCode == HttpURLConnection.HTTP_ACCEPTED) {
-				File savedFile = new File(c.getFilesDir(), SAVED_FILE);
-				savedFile.delete();
-			}
-			outputStream.flush();
-			outputStream.close();
-		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
