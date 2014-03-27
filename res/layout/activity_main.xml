@@ -8,50 +8,87 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity" >
 
-    <CheckBox
-        android:id="@+id/enabled_checkbox"
+    <Button
+        android:id="@+id/classify_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginLeft="16dp"
-        android:layout_marginTop="26dp"
-        android:text="Collection Enabled" />
-
-    <CheckBox
-        android:id="@+id/classify_checkbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/enabled_checkbox"
-        android:layout_below="@+id/enabled_checkbox"
-        android:layout_marginTop="17dp"
-        android:text="Classification Enabled" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="25dp"
+        android:text="Classify" />
 
     <TextView
         android:id="@+id/textView1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/classify_checkbox"
-        android:layout_centerVertical="true"
-        android:text="Suggested Volume: " />
+        android:layout_below="@+id/classify_button"
+        android:layout_marginTop="43dp"
+        android:layout_toLeftOf="@+id/classify_button"
+        android:text="GM label:"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
     <TextView
-        android:id="@+id/ringer_suggestion_text"
+        android:id="@+id/gm_label_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignBaseline="@+id/textView1"
         android:layout_alignBottom="@+id/textView1"
-        android:layout_marginLeft="16dp"
-        android:layout_toRightOf="@+id/textView1"
-        android:text="Not enough data" />
+        android:layout_alignLeft="@+id/classify_button"
+        android:layout_marginLeft="32dp"
+        android:text="--"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
-    <Button
-        android:id="@+id/classify_button"
+    <TextView
+        android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/classify_checkbox"
+        android:layout_below="@+id/textView1"
+        android:layout_marginTop="21dp"
+        android:text="Cluster prob:"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/gm_cluster_prob_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/textView2"
+        android:layout_alignBottom="@+id/textView2"
+        android:layout_alignLeft="@+id/gm_label_text"
+        android:text="--"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/textView2"
+        android:layout_centerVertical="true"
+        android:text="Label prob:"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/gm_label_prob_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/cluster_prob_text"
+        android:layout_centerVertical="true"
+        android:text="--"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <Button
+        android:id="@+id/archive_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="25dp"
-        android:text="Classify" />
+        android:layout_marginBottom="85dp"
+        android:text="Test Archive" />
+
+    <Button
+        android:id="@+id/upload_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignRight="@+id/button1"
+        android:layout_marginBottom="28dp"
+        android:text="test_upload" />
 
 </RelativeLayout>

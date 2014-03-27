@@ -27,9 +27,11 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.autovol.GMClassifyResponse;
 import com.autovol.ml.CurrentStateListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.gson.Gson;
 
 import edu.mit.media.funf.FunfManager;
 
@@ -41,11 +43,12 @@ public class MainActivity extends Activity {
 	public static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
 	
 	private static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
+	private static final String GM_URL = BASE_URL + "/AutoVolWeb/GMClassifyServlet";
 
 	private FunfManager funfManager;
 	
-	private TextView suggestionText;
-	private Button classifyButton;
+	private TextView gmLabel, gmClusterProb, gmLabelProb;
+	private Button classifyButton, archiveButton, uploadButton;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
 	    @Override
 	    public void onServiceConnected(ComponentName name, IBinder service) {
@@ -74,11 +77,29 @@ public class MainActivity extends Activity {
 		classifyButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				remoteClassify();
+				remoteClassifyGM();
+			}
+		});
+		archiveButton = (Button) findViewById(R.id.archive_button);
+		archiveButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent i = new Intent(MainActivity.this, ArchiveService.class);
+				startService(i);
+			}
+		});
+		uploadButton = (Button) findViewById(R.id.upload_button);
+		uploadButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent i = new Intent(MainActivity.this, UploadService.class);
+				startService(i);
 			}
 		});
 		
-		suggestionText = (TextView) findViewById(R.id.ringer_suggestion_text);
+		gmLabel = (TextView) findViewById(R.id.gm_label_text);
+		gmClusterProb = (TextView) findViewById(R.id.gm_cluster_prob_text);
+		gmLabelProb = (TextView) findViewById(R.id.gm_label_prob_text);
 	    
 	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
 	    
@@ -117,7 +138,7 @@ public class MainActivity extends Activity {
         }
     }
     
-    private void remoteClassify() {
+    private void remoteClassifySMO() {
     	if (!CurrentStateListener.getListener().dataIsReady()) {
     		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
     		return;
@@ -164,11 +185,66 @@ public class MainActivity extends Activity {
 			@Override
 			protected void onPostExecute(Double result) {
 				if (result != null) {
-					suggestionText.setText(result.toString());
+					//suggestionText.setText(result.toString());
 					Toast.makeText(MainActivity.this, "New Suggestion: " + result.toString(), Toast.LENGTH_SHORT).show();
 				}
 			}
     		
 		}.execute(reqUrl);
+    }
+    
+    private void remoteClassifyGM() {
+    	if (!CurrentStateListener.getListener().dataIsReady()) {
+    		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
+    		return;
+    	}
+    	
+    	String reqUrl = GM_URL + "?" + "target=" + CurrentStateListener.getListener().currentStateJson();
+    	
+    	new AsyncTask<String, Void, GMClassifyResponse>() {
+
+    		@Override
+    		protected GMClassifyResponse doInBackground(String... urls) {
+    			HttpURLConnection urlConnection = null;
+    			try {
+    				URL url = new URL(urls[0]);
+    				urlConnection = (HttpURLConnection) url.openConnection();
+    				InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+    				BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, "UTF-8")); 
+    				StringBuilder responseStrBuilder = new StringBuilder();
+
+    				String inputStr;
+    				while ((inputStr = streamReader.readLine()) != null)
+    					responseStrBuilder.append(inputStr);
+
+    				Gson gson = new Gson();
+    				GMClassifyResponse response = gson.fromJson(responseStrBuilder.toString(),
+    						GMClassifyResponse.class);
+    				return response;
+    			} catch (MalformedURLException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			} catch (IOException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			} finally {
+    				if (urlConnection != null)
+    					urlConnection.disconnect();
+    			}
+
+    			return null;
+    		}
+
+    		@Override
+    		protected void onPostExecute(GMClassifyResponse result) {
+    			if (result != null) {
+    				gmLabel.setText(result.getRinger());
+    				gmLabelProb.setText(result.getProbOfLabel().toString());
+    				gmClusterProb.setText(result.getProbOfCluster().toString());
+    				Toast.makeText(MainActivity.this, "Classification Complete", Toast.LENGTH_SHORT).show();
+    			}
+    		}
+
+    	}.execute(reqUrl);
     }
 }
