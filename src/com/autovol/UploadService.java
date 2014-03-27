@@ -1,4 +1,4 @@
-package com.example.autovol;
+package com.autovol;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -10,8 +10,6 @@ import java.net.URL;
 
 import android.app.IntentService;
 import android.content.Intent;
-
-import com.autovol.ml.CurrentStateListener;
 
 public class UploadService extends IntentService {
 	

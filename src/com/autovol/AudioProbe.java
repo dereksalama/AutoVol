@@ -1,9 +1,7 @@
-package com.example.autovol;
+package com.autovol;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import android.app.AlarmManager;
@@ -32,7 +30,7 @@ public class AudioProbe extends Base implements PassiveProbe {
 	private static final int INTERVAL_MILLIS = INTERVAL_SECONDS * 1000;
 	private volatile boolean recording = false;
 	
-	private static final String ALARM_FILTER = "com.example.autovol.AUDIO_START";
+	private static final String ALARM_FILTER = "com.autovol.AUDIO_START";
 	
 	
 	private AlarmManager alarmMan;

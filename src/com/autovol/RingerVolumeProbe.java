@@ -1,4 +1,4 @@
-package com.example.autovol;
+package com.autovol;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

@@ -1,4 +1,4 @@
-package com.example.autovol;
+package com.autovol;
 
 import android.app.IntentService;
 import android.content.Intent;

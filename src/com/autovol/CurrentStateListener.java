@@ -1,4 +1,4 @@
-package com.autovol.ml;
+package com.autovol;
 
 import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
@@ -14,9 +14,6 @@ import android.content.Context;
 import android.util.Log;
 
 import com.autovol.CurrentStateData;
-import com.example.autovol.ActivityProbe;
-import com.example.autovol.MyLightSensorProbe;
-import com.example.autovol.RingerVolumeProbe;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

@@ -1,4 +1,4 @@
-package com.example.autovol;
+package com.autovol;
 
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -25,7 +25,7 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
     public static final int DETECTION_INTERVAL_MILLISECONDS =
             MILLISECONDS_PER_SECOND * DETECTION_INTERVAL_SECONDS;
     
-    public static final String BROADCAST_ACTION = "com.example.autovol.ACTIVITY_RECOGNITION_DATA";
+    public static final String BROADCAST_ACTION = "com.autovol.ACTIVITY_RECOGNITION_DATA";
     public static final String ACTIVITY_TYPE = "activity_type";
     public static final String ACTIVITY_NAME = "activity_name";
     public static final String CONFIDENCE = "confidence";

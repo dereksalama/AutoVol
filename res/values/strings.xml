@@ -15,8 +15,8 @@
              "goodEnoughAccuracy": 80,
              "maxWaitTime": 60
             },
-            {"@type": "com.example.autovol.ActivityProbe"},
-            {"@type": "com.example.autovol.AudioProbe"},
+            {"@type": "com.autovol.ActivityProbe"},
+            {"@type": "com.autovol.AudioProbe"},
             {"@type": "edu.mit.media.funf.probe.builtin.BluetoothProbe",
              "@schedule": {"@type": "edu.mit.media.funf.probe.builtin.LocationProbe" }
             },

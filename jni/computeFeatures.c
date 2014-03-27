@@ -114,7 +114,7 @@ void normalizeAcorr(const float *in, float *out, int outLen);
 // 	initialization function to allocate memory for reuse later.
 //
 //**********************************************************************************
-void Java_com_example_autovol_AudioManager_audioFeatureExtractionInit(JNIEnv* env, jobject javaThis) {
+void Java_com_autovol_AudioManager_audioFeatureExtractionInit(JNIEnv* env, jobject javaThis) {
 
 
 	initVoicedFeaturesFunction();
@@ -128,7 +128,7 @@ void Java_com_example_autovol_AudioManager_audioFeatureExtractionInit(JNIEnv* en
 // 	destroy function for the c code. Currently not called
 //
 //**********************************************************************************
-void Java_com_example_autovol_AudioManager_audioFeatureExtractionDestroy(JNIEnv* env, jobject javaThis) {
+void Java_com_autovol_AudioManager_audioFeatureExtractionDestroy(JNIEnv* env, jobject javaThis) {
 
 	destroyVoicedFeaturesFunction();
 
@@ -143,8 +143,8 @@ void Java_com_example_autovol_AudioManager_audioFeatureExtractionDestroy(JNIEnv*
 //	lags are stored in the returned double array
 //
 //**********************************************************************************
-jdoubleArray Java_com_example_autovol_AudioManager_features(JNIEnv* env, jobject javaThis, jshortArray array) {
-//void Java_com_example_autovol_AudioManager_features(JNIEnv* env, jobject javaThis, jshortArray array) {
+jdoubleArray Java_com_autovol_AudioManager_features(JNIEnv* env, jobject javaThis, jshortArray array) {
+//void Java_com_autovol_AudioManager_features(JNIEnv* env, jobject javaThis, jshortArray array) {
 
 	(*env)->GetShortArrayRegion(env, array, 0, FRAME_LENGTH, buf);
 

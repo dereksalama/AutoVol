@@ -1,4 +1,4 @@
-package com.example.autovol;
+package com.autovol;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -28,7 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.autovol.GMClassifyResponse;
-import com.autovol.ml.CurrentStateListener;
+import com.autovol.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;

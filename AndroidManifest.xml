@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.autovol"
+    package="com.autovol"
     android:versionCode="1"
     android:versionName="1.0" >
     
@@ -52,7 +52,7 @@
             android:value="@integer/google_play_services_version" />
 
         <activity
-            android:name="com.example.autovol.MainActivity"
+            android:name="com.autovol.MainActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -66,7 +66,7 @@
             <!-- <meta-data android:name="default" android:value="@string/default_pipeline"/> -->
         </service>
         <service
-            android:name="com.example.autovol.ActivityRecognitionIntentService"
+            android:name="com.autovol.ActivityRecognitionIntentService"
             android:exported="false"
             android:label="@string/app_name" >
         </service>
@@ -83,13 +83,13 @@
             <!-- <action android:name="android.intent.action.USER_PRESENT" /> -->
             <!-- </intent-filter> -->
         </receiver>
-        <receiver android:name="com.example.autovol.UploadAlarm" >
+        <receiver android:name="com.autovol.UploadAlarm" >
         </receiver>
-        <service android:name="com.example.autovol.UploadService" >
+        <service android:name="com.autovol.UploadService" >
         </service>
-        <receiver android:name="com.example.autovol.ArchiveAlarm" >
+        <receiver android:name="com.autovol.ArchiveAlarm" >
         </receiver>
-        <service android:name="com.example.autovol.ArchiveService" >
+        <service android:name="com.autovol.ArchiveService" >
         </service>
     </application>
 

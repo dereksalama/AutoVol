@@ -1,10 +1,8 @@
-package com.example.autovol;
+package com.autovol;
 
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,7 +29,7 @@ public class MyLightSensorProbe extends Base implements PassiveProbe {
 	private static final int INTERVAL_SECONDS = 60 * 2;
 	private static final int INTERVAL_MILLIS = INTERVAL_SECONDS * 1000;
 	private static final int DURATION = 2;
-	private static final String ALARM_FILTER = "com.example.autovol.LIGHT_SENSOR_START";
+	private static final String ALARM_FILTER = "com.autovol.LIGHT_SENSOR_START";
 	
 	private ScheduledExecutorService executor;
 	

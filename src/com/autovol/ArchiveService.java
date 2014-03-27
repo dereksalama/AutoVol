@@ -1,6 +1,4 @@
-package com.example.autovol;
-
-import com.autovol.ml.CurrentStateListener;
+package com.autovol;
 
 import android.app.IntentService;
 import android.content.Intent;
