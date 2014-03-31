@@ -53,8 +53,8 @@ public class CurrentStateListener implements DataListener {
 		"activity_type", "ringer"};
 	private Set<String> typesWaitingInit;
 	
-	private static CurrentStateListener INSTANCE = new CurrentStateListener();
-	public static CurrentStateListener getListener() {
+	private static final CurrentStateListener INSTANCE = new CurrentStateListener();
+	public static CurrentStateListener get() {
 		return INSTANCE;
 	}
 	
@@ -66,11 +66,12 @@ public class CurrentStateListener implements DataListener {
 	}
 	
 	public boolean dataIsReady() {
-		return typesWaitingInit.size() == 0;
+		return typesWaitingInit.isEmpty();
 	}
 	
 	public String currentStateJson() {
-		return currentState.toJson();
+		Gson gson = new Gson();
+		return gson.toJson(currentState, CurrentStateData.class);
 	}
 	
 	public int minutesIntoDay() {
@@ -206,12 +207,15 @@ public class CurrentStateListener implements DataListener {
 			Log.e("CurrentState", "PROBE NOT RECOGNIZED!! -> " + probeType);
 		}
 		
-		if (typesWaitingInit.isEmpty()){
+		if (dataIsReady()){
 			Log.d("CurrentState", "State updated");
-			if (currentState.getTime() < minutesIntoDay()) {
+			int currentTime = minutesIntoDay();
+			if (currentState.getTime() < currentTime) {
 				Log.d("CurrentState", "Minute elapsed, creating new data obj");
 				savedStates.add(currentState);
-				currentState = new CurrentStateData();
+				CurrentStateData next = new CurrentStateData(currentState);
+				next.setTime(currentTime);
+				currentState = next;
 			}
 		} else {
 			Log.d("CurrentState", "State still incomplete. Need: " + typesWaitingInit.toString());
@@ -222,12 +226,14 @@ public class CurrentStateListener implements DataListener {
 	private String serializeRecentObservations() {
 		Gson gson = new Gson();
 		String result =  gson.toJson(savedStates);
-		savedStates.clear();
 		return result;
 	}
 	
 	public void saveRecentObservations(Context c) {
 		OutputStream outputStream;
+		if (savedStates.isEmpty()) {
+			return;
+		}
 		try {
 			outputStream = new BufferedOutputStream(
 					c.openFileOutput(SAVED_FILE, Context.MODE_APPEND));

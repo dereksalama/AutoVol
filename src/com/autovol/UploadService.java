@@ -10,6 +10,7 @@ import java.net.URL;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.util.Log;
 
 public class UploadService extends IntentService {
 	
@@ -17,8 +18,8 @@ public class UploadService extends IntentService {
 			"/AutoVolWeb/DataUploadServlet";
 	private static final int MAX_BUFFER_SIZE = 1*1024*1024;
 	
-	public UploadService(String str) {
-		super(str);
+	public UploadService() {
+		super("UploadService");
 	}
 
 	/**
@@ -45,6 +46,10 @@ public class UploadService extends IntentService {
 			outputStream = new DataOutputStream(conn.getOutputStream());
 
 			bytesAvailable = fileInput.available();
+			if (bytesAvailable == 0) {
+				Log.d("UploadService", "Nothing to upload");
+				return;
+			}
 			bufferSize = Math.min(bytesAvailable, MAX_BUFFER_SIZE);
 			buffer = new byte[bufferSize];
 

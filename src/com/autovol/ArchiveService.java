@@ -4,14 +4,14 @@ import android.app.IntentService;
 import android.content.Intent;
 
 public class ArchiveService extends IntentService {
-
-	public ArchiveService(String name) {
-		super(name);
+	
+	public ArchiveService() {
+		super("ArchiveService");
 	}
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		CurrentStateListener.getListener().saveRecentObservations(this);
+		CurrentStateListener.get().saveRecentObservations(this);
 	}
 
 }

@@ -28,7 +28,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.autovol.GMClassifyResponse;
-import com.autovol.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;
@@ -37,10 +36,10 @@ import edu.mit.media.funf.FunfManager;
 
 public class MainActivity extends Activity {
 	// Local host
-	//private static final String BASE_URL = "http://10.0.1.17:8080";
+	public static final String BASE_URL = "http://10.0.1.17:8080";
 	
 	// AWS host
-	public static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
+	//public static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
 	
 	private static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
 	private static final String GM_URL = BASE_URL + "/AutoVolWeb/GMClassifyServlet";
@@ -55,7 +54,7 @@ public class MainActivity extends Activity {
 	    	Log.d("MainActivity", "onServiceConnected");
 	        funfManager = ((FunfManager.LocalBinder)service).getManager();
 
-	        CurrentStateListener.getListener().enable(funfManager);
+	        CurrentStateListener.get().enable(funfManager);
 	        
 	        ArchiveAlarm.scheduleRepeatedArchive(MainActivity.this);
 	        UploadAlarm.scheduleDailyUpload(MainActivity.this);
@@ -108,7 +107,7 @@ public class MainActivity extends Activity {
 	
 	@Override
 	protected void onDestroy() {
-		CurrentStateListener.getListener().disable(funfManager);
+		CurrentStateListener.get().disable(funfManager);
 		unbindService(funfManagerConn);
 		super.onDestroy();
 	}
@@ -139,12 +138,12 @@ public class MainActivity extends Activity {
     }
     
     private void remoteClassifySMO() {
-    	if (!CurrentStateListener.getListener().dataIsReady()) {
+    	if (!CurrentStateListener.get().dataIsReady()) {
     		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
     		return;
     	}
     	//TODO: this is not currently going to work
-    	String reqUrl = SMO_URL + "?" + "state=" + CurrentStateListener.getListener().currentStateJson();
+    	String reqUrl = SMO_URL + "?" + "state=" + CurrentStateListener.get().currentStateJson();
     	
     	new AsyncTask<String, Void, Double>() {
 
@@ -194,12 +193,12 @@ public class MainActivity extends Activity {
     }
     
     private void remoteClassifyGM() {
-    	if (!CurrentStateListener.getListener().dataIsReady()) {
+    	if (!CurrentStateListener.get().dataIsReady()) {
     		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
     		return;
     	}
     	
-    	String reqUrl = GM_URL + "?" + "target=" + CurrentStateListener.getListener().currentStateJson();
+    	String reqUrl = GM_URL + "?" + "target=" + CurrentStateListener.get().currentStateJson();
     	
     	new AsyncTask<String, Void, GMClassifyResponse>() {
 
