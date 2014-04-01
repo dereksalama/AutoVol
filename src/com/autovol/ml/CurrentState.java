@@ -45,8 +45,6 @@ public class CurrentState implements DataListener {
 	private volatile long lastWifiTime = 0;
 	private final Set<String> visibleWifis = Collections.synchronizedSet(new HashSet<String>(10));
 	
-	private final Context context;
-	
 	private SimpleLocationProbe locationProbe;
 	private ActivityProbe activityProbe;
 	private AudioProbe audioProbe;
@@ -98,10 +96,12 @@ public class CurrentState implements DataListener {
 		ALL_TYPES.addAll(Arrays.asList(AUDIO_NAMES));
 	}
 	
+	private static final CurrentState INSTANCE = new CurrentState();
+	public static CurrentState get() {
+		return INSTANCE;
+	}
 	
-	public CurrentState(Context context) {
-		this.context = context;
-		
+	private CurrentState() {
 		typesWaitingInit = Collections.synchronizedSet(new HashSet<String>(TYPES_NEEDING_INIT.length));
 		typesWaitingInit.addAll(Arrays.asList(TYPES_NEEDING_INIT));
 	}
@@ -260,9 +260,6 @@ public class CurrentState implements DataListener {
 		if (typesWaitingInit.isEmpty()){
 			//TODO: this is kinda hacky
 			Log.d("CurrentState", "State updated");
-
-			Intent broadcastIntent = new Intent(NEW_STATE_BROADCAST);
-			context.sendBroadcast(broadcastIntent);
 		} else {
 			Log.d("CurrentState", "State still incomplete. Need: " + typesWaitingInit.toString());
 		}

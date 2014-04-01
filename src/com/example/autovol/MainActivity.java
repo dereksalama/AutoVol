@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
 	// AWS host
 	private static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
 	
-	private static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
+	public static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
 	public static final String PIPELINE_NAME = "default";
 	public static final int ARCHIVE_DELAY = 15 * 60;
 	private FunfManager funfManager;
@@ -68,8 +68,6 @@ public class MainActivity extends Activity {
 	private ProximitySensorProbe proximityProbe;
 	private BatteryProbe batteryProbe;
 	private RingerVolumeProbe ringerProbe;
-	
-	private CurrentState currentState;
 	
 	private CheckBox enabledBox, classifyBox;
 	private TextView suggestionText;
@@ -115,7 +113,7 @@ public class MainActivity extends Activity {
 	        enabledBox.setEnabled(true);
 	        classifyBox.setChecked(false);
 	        classifyBox.setEnabled(true);
-	        currentState.enable(funfManager);
+	        CurrentState.get().enable(funfManager);
 	    }
 	    
 	    @Override
@@ -129,8 +127,6 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
-		currentState = new CurrentState(this);
 		
 		enabledBox = (CheckBox) findViewById(R.id.enabled_checkbox);
 		enabledBox.setEnabled(false);
@@ -157,10 +153,10 @@ public class MainActivity extends Activity {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 				if (isChecked) {
-					currentState.enable(funfManager);
+					CurrentState.get().enable(funfManager);
 
 				} else {
-					currentState.disable(funfManager);
+					CurrentState.get().disable(funfManager);
 				}
 			}
 		});
@@ -182,7 +178,7 @@ public class MainActivity extends Activity {
 	
 	@Override
 	protected void onDestroy() {
-		currentState.disable(funfManager);
+		CurrentState.get().disable(funfManager);
 		funfManager.disablePipeline(PIPELINE_NAME);
 		unbindService(funfManagerConn);
 		super.onDestroy();
@@ -214,11 +210,11 @@ public class MainActivity extends Activity {
     }
     
     private void remoteClassify() {
-    	if (!currentState.dataIsReady()) {
+    	if (!CurrentState.get().dataIsReady()) {
     		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
     		return;
     	}
-    	String reqUrl = SMO_URL + "?" + currentState.requestParamString();
+    	String reqUrl = SMO_URL + "?" + CurrentState.get().requestParamString();
     	
     	new AsyncTask<String, Void, Double>() {
 
