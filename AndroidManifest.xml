@@ -3,40 +3,41 @@
     package="com.example.autovol"
     android:versionCode="1"
     android:versionName="1.0" >
-    
+
     <uses-permission android:name="android.permission.BATTERY_STATS" />
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.INTERNET"/>
-    
-        <!-- Location probe -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>  
-    
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Location probe -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
     <!-- Bluetooth -->
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-    
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
     <!-- Light sensor -->
-    <uses-feature android:name="android.hardware.sensor.light"/>
-    
+    <uses-feature android:name="android.hardware.sensor.light" />
+
     <!-- Wifi -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
-    
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
     <!-- Battery -->
-    <uses-permission android:name="android.permission.BATTERY_STATS"/>
-    
+    <uses-permission android:name="android.permission.BATTERY_STATS" />
+
     <!-- Running apps -->
-    <uses-permission android:name="android.permission.GET_TASKS"/>
-    
+    <uses-permission android:name="android.permission.GET_TASKS" />
+
     <!-- Activity -->
-    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION"/>
-    
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
+
     <!-- Audio -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-feature android:name="android.hardware.microphone"/>
+
+    <uses-feature android:name="android.hardware.microphone" />
 
     <uses-sdk
         android:minSdkVersion="18"
@@ -83,10 +84,21 @@
             <!-- <action android:name="android.intent.action.USER_PRESENT" /> -->
             <!-- </intent-filter> -->
         </receiver>
-        
-        <service android:name="com.example.autovol.ClassifyService"></service>
-        <receiver android:name="com.example.autovol.ClassifyAlarm"></receiver>
 
+        <service android:name="com.example.autovol.ClassifyService" >
+        </service>
+
+        <receiver android:name="com.example.autovol.ClassifyAlarm" >
+        </receiver>
+
+        <activity
+            android:name="com.example.autovol.ResultsActivity"
+            android:label="@string/title_activity_results"
+            android:parentActivityName="com.example.autovol.MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.autovol.MainActivity" />
+        </activity>
     </application>
 
 </manifest>

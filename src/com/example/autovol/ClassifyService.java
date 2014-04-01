@@ -31,7 +31,6 @@ public class ClassifyService extends IntentService {
 	}
 
 	public static final String FILE_NAME = "classify_result_file";
-	public static final String INTENT_RESULT = "result";
 	
 	private void saveResult(String result) {
 		try {
@@ -50,6 +49,7 @@ public class ClassifyService extends IntentService {
 	protected void onHandleIntent(Intent intent) {
 		String reqUrl = MainActivity.SMO_URL + "?" + CurrentState.get().requestParamString();
 		String time = DateFormat.getTimeInstance().format(new Date());
+		Log.d("ClassifyService", "intent received");
 
 		HttpURLConnection urlConnection = null;
 		try {

@@ -8,33 +8,6 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity" >
 
-    <CheckBox
-        android:id="@+id/enabled_checkbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginLeft="16dp"
-        android:layout_marginTop="26dp"
-        android:text="Collection Enabled" />
-
-    <CheckBox
-        android:id="@+id/classify_checkbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/enabled_checkbox"
-        android:layout_below="@+id/enabled_checkbox"
-        android:layout_marginTop="17dp"
-        android:text="Classification Enabled" />
-
-    <TextView
-        android:id="@+id/textView1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/classify_checkbox"
-        android:layout_centerVertical="true"
-        android:text="Suggested Volume: " />
-
     <TextView
         android:id="@+id/ringer_suggestion_text"
         android:layout_width="wrap_content"
@@ -49,9 +22,36 @@
         android:id="@+id/classify_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/classify_checkbox"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="25dp"
         android:text="Classify" />
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/classify_button"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="47dp"
+        android:text="Suggested Volume: " />
+
+    <Button
+        android:id="@+id/background_classify_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView1"
+        android:layout_marginTop="120dp"
+        android:layout_toLeftOf="@+id/ringer_suggestion_text"
+        android:text="Background Classify" />
+
+    <Button
+        android:id="@+id/history_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/background_classify_button"
+        android:layout_marginTop="14dp"
+        android:layout_toRightOf="@+id/classify_button"
+        android:text="History" />
 
 </RelativeLayout>

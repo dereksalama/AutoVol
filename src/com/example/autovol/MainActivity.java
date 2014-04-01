@@ -61,17 +61,15 @@ public class MainActivity extends Activity {
 	
 	private SimpleLocationProbe locationProbe;
 	private ActivityProbe activityProbe;
-	private AudioProbe audioProbe;
 	private BluetoothProbe bluetoothProbe;
 	private MyLightSensorProbe lightProbe;
 	private WifiProbe wifiProbe;
 	private ProximitySensorProbe proximityProbe;
 	private BatteryProbe batteryProbe;
 	private RingerVolumeProbe ringerProbe;
-	
-	private CheckBox enabledBox, classifyBox;
+
 	private TextView suggestionText;
-	private Button classifyButton;
+	private Button classifyButton, backgroundClassifyButton, historyButton;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
 	    @Override
 	    public void onServiceConnected(ComponentName name, IBinder service) {
@@ -108,12 +106,9 @@ public class MainActivity extends Activity {
 	        
 	        funfManager.registerPipelineAction(pipeline, BasicPipeline.ACTION_ARCHIVE, 
 	        		new Schedule.BasicSchedule(new BigDecimal(ARCHIVE_DELAY), null, false, false));
-	        
-	        enabledBox.setChecked(pipeline.isEnabled());
-	        enabledBox.setEnabled(true);
-	        classifyBox.setChecked(false);
-	        classifyBox.setEnabled(true);
+
 	        CurrentState.get().enable(funfManager);
+	        ClassifyAlarm.scheduleRepeatedAlarm(MainActivity.this);
 	    }
 	    
 	    @Override
@@ -128,44 +123,29 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		enabledBox = (CheckBox) findViewById(R.id.enabled_checkbox);
-		enabledBox.setEnabled(false);
-		enabledBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-			
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (funfManager != null) {
-                    if (isChecked) {
-                        funfManager.enablePipeline(PIPELINE_NAME);
-                        pipeline = (BasicPipeline) funfManager.getRegisteredPipeline(PIPELINE_NAME);
-                    } else {
-                        funfManager.disablePipeline(PIPELINE_NAME);
-                    }
-                }
-			}
-		});
-		
-		classifyBox = (CheckBox) findViewById(R.id.classify_checkbox);
-		classifyBox.setChecked(false);
-		classifyBox.setEnabled(false);
-		classifyBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-			
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				if (isChecked) {
-					CurrentState.get().enable(funfManager);
-
-				} else {
-					CurrentState.get().disable(funfManager);
-				}
-			}
-		});
-		
 		classifyButton = (Button) findViewById(R.id.classify_button);
 		classifyButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				remoteClassify();
+			}
+		});
+		
+		backgroundClassifyButton = (Button) findViewById(R.id.background_classify_button);
+		backgroundClassifyButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent serviceIntent = new Intent(MainActivity.this, ClassifyService.class);
+				startService(serviceIntent);
+			}
+		});
+		
+		historyButton = (Button) findViewById(R.id.history_button);
+		historyButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(MainActivity.this, ResultsActivity.class);
+				startActivity(intent);
 			}
 		});
 		
