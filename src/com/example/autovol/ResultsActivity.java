@@ -1,6 +1,7 @@
 package com.example.autovol;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -35,6 +36,10 @@ public class ResultsActivity extends ListActivity {
 	@Override
 	public void onResume() {
 		super.onResume();
+		loadData();
+	}
+	
+	private void loadData() {
 		BufferedReader reader;
 		try {
 			reader = new BufferedReader(
@@ -52,7 +57,6 @@ public class ResultsActivity extends ListActivity {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
 
 	@Override
@@ -61,8 +65,15 @@ public class ResultsActivity extends ListActivity {
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
-		if (id == R.id.action_settings) {
+		if (id == R.id.results_action_delete) {
+			File f = getFileStreamPath(ClassifyService.FILE_NAME);
+			if (f.exists()) {
+				f.delete();
+				adapter.clear();
+			}
 			return true;
+		} else if (id == R.id.results_action_refresh) {
+			loadData();
 		}
 		return super.onOptionsItemSelected(item);
 	}

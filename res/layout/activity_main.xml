@@ -8,50 +8,80 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity" >
 
-    <TextView
-        android:id="@+id/ringer_suggestion_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/textView1"
-        android:layout_alignBottom="@+id/textView1"
-        android:layout_marginLeft="16dp"
-        android:layout_toRightOf="@+id/textView1"
-        android:text="Not enough data" />
-
-    <Button
-        android:id="@+id/classify_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="25dp"
-        android:text="Classify" />
-
-    <TextView
-        android:id="@+id/textView1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_below="@+id/classify_button"
-        android:layout_marginLeft="16dp"
-        android:layout_marginTop="47dp"
-        android:text="Suggested Volume: " />
-
     <Button
         android:id="@+id/background_classify_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textView1"
-        android:layout_marginTop="120dp"
-        android:layout_toLeftOf="@+id/ringer_suggestion_text"
+        android:layout_alignParentBottom="true"
+        android:layout_toLeftOf="@+id/history_button"
         android:text="Background Classify" />
 
     <Button
         android:id="@+id/history_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/background_classify_button"
-        android:layout_marginTop="14dp"
-        android:layout_toRightOf="@+id/classify_button"
+        android:layout_alignBottom="@+id/background_classify_button"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="28dp"
         android:text="History" />
+
+    <TableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="5dip" 
+        android:gravity="center">
+
+        <TableRow
+            android:id="@+id/tableRow1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" 
+            android:gravity="center">
+            <TextView
+                android:text="SMO" 
+                android:layout_marginRight="3dip"/>
+            <TextView
+                android:id="@+id/smo_result_text"
+                android:text="--" />
+
+        </TableRow>
+
+        <TableRow
+            android:id="@+id/tableRow2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" 
+            android:gravity="center">
+            <TextView
+                android:text="K3" 
+                android:layout_marginRight="3dip"/>
+            <TextView
+                android:id="@+id/k3_result_text"
+                android:text="--" />
+        </TableRow>
+
+        <TableRow
+            android:id="@+id/tableRow3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center" >
+            <TextView
+                android:text="K7"
+                android:layout_marginRight="3dip" />
+            <TextView
+                android:id="@+id/k7_result_text"
+                android:text="--" />
+        </TableRow>
+    </TableLayout>
+
+    <Button
+        android:id="@+id/classify_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/background_classify_button"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="25dp"
+        android:text="Classify" />
 
 </RelativeLayout>

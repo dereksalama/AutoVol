@@ -25,9 +25,6 @@ import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -68,7 +65,9 @@ public class MainActivity extends Activity {
 	private BatteryProbe batteryProbe;
 	private RingerVolumeProbe ringerProbe;
 
-	private TextView suggestionText;
+	private TextView smoText;
+	private TextView k3Text;
+	private TextView k7Text;
 	private Button classifyButton, backgroundClassifyButton, historyButton;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
 	    @Override
@@ -149,7 +148,9 @@ public class MainActivity extends Activity {
 			}
 		});
 		
-		suggestionText = (TextView) findViewById(R.id.ringer_suggestion_text);
+		smoText = (TextView) findViewById(R.id.smo_result_text);
+		k3Text = (TextView) findViewById(R.id.k3_result_text);
+		k7Text = (TextView) findViewById(R.id.k7_result_text);
 	    
 	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
 	    
@@ -196,10 +197,10 @@ public class MainActivity extends Activity {
     	}
     	String reqUrl = SMO_URL + "?" + CurrentState.get().requestParamString();
     	
-    	new AsyncTask<String, Void, Double>() {
+    	new AsyncTask<String, Void, JSONObject>() {
 
 			@Override
-			protected Double doInBackground(String... urls) {
+			protected JSONObject doInBackground(String... urls) {
 				HttpURLConnection urlConnection = null;
 			    try {
 			    	URL url = new URL(urls[0]);
@@ -213,16 +214,12 @@ public class MainActivity extends Activity {
 			          responseStrBuilder.append(inputStr);
 			      
 			      JSONObject result = new JSONObject(responseStrBuilder.toString());
-			      Double ringer = result.getDouble("ringer_type");
-			      return ringer;
+			      return result;
 			    } catch (MalformedURLException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (JSONException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} finally {
 			    	if (urlConnection != null)
@@ -233,9 +230,16 @@ public class MainActivity extends Activity {
 			}
 			
 			@Override
-			protected void onPostExecute(Double result) {
+			protected void onPostExecute(JSONObject result) {
 				if (result != null) {
-					suggestionText.setText(result.toString());
+					try {
+						smoText.setText(result.getString("smo"));
+						k3Text.setText(result.getString("k3"));
+						k7Text.setText(result.getString("k7"));
+					} catch (JSONException e) {
+						Log.d("MainActivity", "json exception");
+						e.printStackTrace();
+					}
 					Toast.makeText(MainActivity.this, "New Suggestion: " + result.toString(), Toast.LENGTH_SHORT).show();
 				}
 			}

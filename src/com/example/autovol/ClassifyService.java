@@ -11,8 +11,9 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -48,7 +49,7 @@ public class ClassifyService extends IntentService {
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		String reqUrl = MainActivity.SMO_URL + "?" + CurrentState.get().requestParamString();
-		String time = DateFormat.getTimeInstance().format(new Date());
+		String time = new SimpleDateFormat("dd HH:mm", Locale.US).format(new Date());
 		Log.d("ClassifyService", "intent received");
 
 		HttpURLConnection urlConnection = null;
@@ -64,9 +65,11 @@ public class ClassifyService extends IntentService {
 				responseStrBuilder.append(inputStr);
 
 			JSONObject result = new JSONObject(responseStrBuilder.toString());
-			Double ringer = result.getDouble("ringer_type");
-			saveResult(time + ": " + ringer + "\n");
-			Log.d("ClassifyService", "result saved:" + ringer);
+			String smo = result.getString("smo");
+			String k3 = result.getString("k3");
+			String k5 = result.getString("k7");
+			saveResult(time + ": " + smo + "," + k3 + "," + k5 + "\n");
+			Log.d("ClassifyService", "result saved");
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

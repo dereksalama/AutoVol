@@ -11,12 +11,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 
 import com.example.autovol.ActivityProbe;
-import com.example.autovol.AudioProbe;
 import com.example.autovol.MyLightSensorProbe;
 import com.example.autovol.RingerVolumeProbe;
 import com.google.gson.Gson;
@@ -27,7 +24,6 @@ import edu.mit.media.funf.FunfManager;
 import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.probe.Probe.DataListener;
 import edu.mit.media.funf.probe.builtin.BatteryProbe;
-import edu.mit.media.funf.probe.builtin.BluetoothProbe;
 import edu.mit.media.funf.probe.builtin.ProximitySensorProbe;
 import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
 import edu.mit.media.funf.probe.builtin.WifiProbe;
@@ -47,8 +43,6 @@ public class CurrentState implements DataListener {
 	
 	private SimpleLocationProbe locationProbe;
 	private ActivityProbe activityProbe;
-	private AudioProbe audioProbe;
-	private BluetoothProbe bluetoothProbe;
 	private MyLightSensorProbe lightProbe;
 	private WifiProbe wifiProbe;
 	private ProximitySensorProbe proximityProbe;
@@ -111,7 +105,6 @@ public class CurrentState implements DataListener {
         locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
         activityProbe = gson.fromJson(new JsonObject(), ActivityProbe.class);
         //audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
-        bluetoothProbe = gson.fromJson(new JsonObject(), BluetoothProbe.class);
         lightProbe = gson.fromJson(new JsonObject(), MyLightSensorProbe.class);
         wifiProbe = gson.fromJson(new JsonObject(), WifiProbe.class);
         proximityProbe = gson.fromJson(new JsonObject(),ProximitySensorProbe.class);
@@ -120,7 +113,6 @@ public class CurrentState implements DataListener {
         
         funfManager.requestData(this, locationProbe.getConfig());
         activityProbe.registerPassiveListener(this); //scheduling in probe
-        funfManager.requestData(this, bluetoothProbe.getConfig());
         
         lightProbe.registerPassiveListener(this);
         //audioProbe.registerPassiveListener(this);
@@ -137,7 +129,6 @@ public class CurrentState implements DataListener {
 		funfManager.unrequestAllData(this);
 		lightProbe.unregisterPassiveListener(this);
 		activityProbe.unregisterPassiveListener(this);
-		audioProbe.unregisterPassiveListener(this);
 		ringerProbe.unregisterPassiveListener(this);
 	}
 	
