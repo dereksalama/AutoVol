@@ -28,6 +28,7 @@ public class UploadService extends IntentService {
 	 */
 	@Override
 	protected void onHandleIntent(Intent intent) {
+		Log.d("UploadService", "intent received");
 		HttpURLConnection conn = null;
 		FileInputStream fileInput = null;
 		DataOutputStream outputStream = null;
@@ -60,12 +61,17 @@ public class UploadService extends IntentService {
 				bufferSize = Math.min(bytesAvailable, MAX_BUFFER_SIZE);
 				bytesRead = fileInput.read(buffer, 0, bufferSize);
 			}
+			String closingBracket = "]"; // complete list
+			outputStream.write(closingBracket.getBytes());
 			int serverResponseCode = conn.getResponseCode();
 			fileInput.close();
+
 			if (serverResponseCode == HttpURLConnection.HTTP_ACCEPTED) {
-				File savedFile = new File(getFilesDir(), CurrentStateListener.SAVED_FILE);
+				Log.d("UploadService", "success, deleting");
+				File savedFile = getFileStreamPath(CurrentStateListener.SAVED_FILE);
 				savedFile.delete();
 			}
+
 			outputStream.flush();
 			outputStream.close();
 		} catch (MalformedURLException e) {

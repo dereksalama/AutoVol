@@ -3,8 +3,9 @@ package com.autovol;
 // IMPT: changes done to this class must also happen in WEB project!!
 public class CurrentStateData {
 	
-	public static final int NUM_ATTRS = 11;
+	public static final int NUM_ATTRS = 14;
 
+	private double day;
 	private double time;
 	private double lat;
 	private double lon; // "long"
@@ -15,15 +16,15 @@ public class CurrentStateData {
 	private String charging;
 	private String activityType;
 	private double activityConfidence;
+	private double audioMag;
+	private String screenOn;
 	private String ringer;
 	
-	//TODO: audio?
-	
-	// no args constructor for gson
 	public CurrentStateData() {} 
 	
 	// Deep copy
 	public CurrentStateData(CurrentStateData data) {
+		day = data.getDay();
 		time = data.getTime();
 		lat = data.getLat();
 		lon = data.getLon();
@@ -34,6 +35,8 @@ public class CurrentStateData {
 		charging = data.getCharging();
 		activityType = data.getActivityType();
 		activityConfidence = data.getActivityConfidence();
+		audioMag = data.getAudioMag();
+		screenOn = data.getScreenOn();
 		ringer = data.getRinger();
 	}
 	
@@ -123,5 +126,29 @@ public class CurrentStateData {
 
 	public void setRinger(String ringer) {
 		this.ringer = ringer;
+	}
+
+	public double getAudioMag() {
+		return audioMag;
+	}
+
+	public void setAudioMag(double audioMag) {
+		this.audioMag = audioMag;
+	}
+
+	public String getScreenOn() {
+		return screenOn;
+	}
+
+	public void setScreenOn(String screenOn) {
+		this.screenOn = screenOn;
+	}
+
+	public double getDay() {
+		return day;
+	}
+
+	public void setDay(double day) {
+		this.day = day;
 	}
 }

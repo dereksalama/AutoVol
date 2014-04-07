@@ -36,10 +36,10 @@ import edu.mit.media.funf.FunfManager;
 
 public class MainActivity extends Activity {
 	// Local host
-	public static final String BASE_URL = "http://10.0.1.17:8080";
+	//public static final String BASE_URL = "http://10.0.1.17:8080";
 	
 	// AWS host
-	//public static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
+	public static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
 	
 	private static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
 	private static final String GM_URL = BASE_URL + "/AutoVolWeb/GMClassifyServlet";
@@ -147,49 +147,49 @@ public class MainActivity extends Activity {
     	
     	new AsyncTask<String, Void, Double>() {
 
-			@Override
-			protected Double doInBackground(String... urls) {
-				HttpURLConnection urlConnection = null;
-			    try {
-			    	URL url = new URL(urls[0]);
-			    	urlConnection = (HttpURLConnection) url.openConnection();
-			      InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-			      BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, "UTF-8")); 
-			      StringBuilder responseStrBuilder = new StringBuilder();
+    		@Override
+    		protected Double doInBackground(String... urls) {
+    			HttpURLConnection urlConnection = null;
+    			try {
+    				URL url = new URL(urls[0]);
+    				urlConnection = (HttpURLConnection) url.openConnection();
+    				InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+    				BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, "UTF-8")); 
+    				StringBuilder responseStrBuilder = new StringBuilder();
 
-			      String inputStr;
-			      while ((inputStr = streamReader.readLine()) != null)
-			          responseStrBuilder.append(inputStr);
-			      
-			      JSONObject result = new JSONObject(responseStrBuilder.toString());
-			      Double ringer = result.getDouble("ringer_type");
-			      return ringer;
-			    } catch (MalformedURLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} finally {
-			    	if (urlConnection != null)
-			    		urlConnection.disconnect();
-			    }
-				
-			    return null;
-			}
-			
-			@Override
-			protected void onPostExecute(Double result) {
-				if (result != null) {
-					//suggestionText.setText(result.toString());
-					Toast.makeText(MainActivity.this, "New Suggestion: " + result.toString(), Toast.LENGTH_SHORT).show();
-				}
-			}
-    		
-		}.execute(reqUrl);
+    				String inputStr;
+    				while ((inputStr = streamReader.readLine()) != null)
+    					responseStrBuilder.append(inputStr);
+
+    				JSONObject result = new JSONObject(responseStrBuilder.toString());
+    				Double ringer = result.getDouble("ringer_type");
+    				return ringer;
+    			} catch (MalformedURLException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			} catch (IOException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			} catch (JSONException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			} finally {
+    				if (urlConnection != null)
+    					urlConnection.disconnect();
+    			}
+
+    			return null;
+    		}
+
+    		@Override
+    		protected void onPostExecute(Double result) {
+    			if (result != null) {
+    				//suggestionText.setText(result.toString());
+    				Toast.makeText(MainActivity.this, "New Suggestion: " + result.toString(), Toast.LENGTH_SHORT).show();
+    			}
+    		}
+
+    	}.execute(reqUrl);
     }
     
     private void remoteClassifyGM() {
