@@ -45,10 +45,10 @@ import edu.mit.media.funf.probe.builtin.WifiProbe;
 
 public class MainActivity extends Activity {
 	// Local host
-	//private static final String BASE_URL = "http://10.0.1.17:8080";
+	private static final String BASE_URL = "http://10.0.1.17:8080";
 	
 	// AWS host
-	private static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
+	//private static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
 	
 	public static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
 	public static final String PIPELINE_NAME = "default";
@@ -65,9 +65,7 @@ public class MainActivity extends Activity {
 	private BatteryProbe batteryProbe;
 	private RingerVolumeProbe ringerProbe;
 
-	private TextView smoText;
-	private TextView k3Text;
-	private TextView k7Text;
+	private TextView k3Text, k7Text, rawK3Text, rawK7Text, locClusterText;
 	private Button classifyButton, backgroundClassifyButton, historyButton;
 	private ServiceConnection funfManagerConn = new ServiceConnection() {    
 	    @Override
@@ -148,9 +146,11 @@ public class MainActivity extends Activity {
 			}
 		});
 		
-		smoText = (TextView) findViewById(R.id.smo_result_text);
 		k3Text = (TextView) findViewById(R.id.k3_result_text);
 		k7Text = (TextView) findViewById(R.id.k7_result_text);
+		rawK3Text = (TextView) findViewById(R.id.raw_k3_result_text);
+		rawK7Text = (TextView) findViewById(R.id.raw_k7_result_text);
+		locClusterText = (TextView) findViewById(R.id.loc_cluster_text);
 	    
 	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
 	    
@@ -233,9 +233,12 @@ public class MainActivity extends Activity {
 			protected void onPostExecute(JSONObject result) {
 				if (result != null) {
 					try {
-						smoText.setText(result.getString("smo"));
 						k3Text.setText(result.getString("k3"));
 						k7Text.setText(result.getString("k7"));
+						
+						rawK3Text.setText(result.getString("raw_k3"));
+						rawK7Text.setText(result.getString("raw_k7"));
+						locClusterText.setText(result.getString("loc"));
 					} catch (JSONException e) {
 						Log.d("MainActivity", "json exception");
 						e.printStackTrace();

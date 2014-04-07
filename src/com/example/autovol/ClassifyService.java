@@ -65,10 +65,12 @@ public class ClassifyService extends IntentService {
 				responseStrBuilder.append(inputStr);
 
 			JSONObject result = new JSONObject(responseStrBuilder.toString());
-			String smo = result.getString("smo");
 			String k3 = result.getString("k3");
-			String k5 = result.getString("k7");
-			saveResult(time + ": " + smo + "," + k3 + "," + k5 + "\n");
+			String k7 = result.getString("k7");
+			String rawK3 = result.getString("raw_k3");
+			String rawK7 = result.getString("raw_k7");
+			String loc = result.getString("loc");
+			saveResult(time + ": " + k3 + ", " + k7 + ",\n" + rawK3 + ", " + rawK7 + ", " + loc + "\n");
 			Log.d("ClassifyService", "result saved");
 		} catch (MalformedURLException e) {
 			e.printStackTrace();

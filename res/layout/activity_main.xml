@@ -35,21 +35,6 @@
         android:gravity="center">
 
         <TableRow
-            android:id="@+id/tableRow1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" 
-            android:gravity="center">
-            <TextView
-                android:text="SMO" 
-                android:layout_marginRight="3dip"/>
-            <TextView
-                android:id="@+id/smo_result_text"
-                android:text="--" />
-
-        </TableRow>
-
-        <TableRow
-            android:id="@+id/tableRow2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" 
             android:gravity="center">
@@ -62,7 +47,6 @@
         </TableRow>
 
         <TableRow
-            android:id="@+id/tableRow3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center" >
@@ -73,7 +57,44 @@
                 android:id="@+id/k7_result_text"
                 android:text="--" />
         </TableRow>
+                <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" 
+            android:gravity="center">
+            <TextView
+                android:text="raw K3" 
+                android:layout_marginRight="3dip"/>
+            <TextView
+                android:id="@+id/raw_k3_result_text"
+                android:text="--" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center" >
+            <TextView
+                android:text="raw K7"
+                android:layout_marginRight="3dip" />
+            <TextView
+                android:id="@+id/raw_k7_result_text"
+                android:text="--" />
+        </TableRow>
+        
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center" >
+            <TextView
+                android:text="loc cluster"
+                android:layout_marginRight="3dip" />
+            <TextView
+                android:id="@+id/loc_cluster_text"
+                android:text="--" />
+        </TableRow>
     </TableLayout>
+    
+    
 
     <Button
         android:id="@+id/classify_button"

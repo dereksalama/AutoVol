@@ -24,6 +24,7 @@ import edu.mit.media.funf.FunfManager;
 import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.probe.Probe.DataListener;
 import edu.mit.media.funf.probe.builtin.BatteryProbe;
+import edu.mit.media.funf.probe.builtin.BluetoothProbe;
 import edu.mit.media.funf.probe.builtin.ProximitySensorProbe;
 import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
 import edu.mit.media.funf.probe.builtin.WifiProbe;
@@ -34,12 +35,17 @@ public class CurrentState implements DataListener {
 	
 	Map<String, Double> values = new ConcurrentHashMap<String, Double>(TYPES_NEEDING_INIT.length);
 	private static final String[] TYPES_NEEDING_INIT = { "lat" , "long",
-		"loc_provider", "activity_confidence", "light", "distance", "wifi_count", "charging"};
+		"loc_provider", "activity_confidence", "light", "distance", "wifi_count", "charging" };
+	//	"bt_count"};
 	private Set<String> typesWaitingInit;
 	
 	private static final int WIFI_WAIT_PERIOD = 15;
 	private volatile long lastWifiTime = 0;
 	private final Set<String> visibleWifis = Collections.synchronizedSet(new HashSet<String>(10));
+	
+	private static final int BT_WAIT_PERIOD = 30;
+	private volatile long lastBtTime = 0;
+	private final Set<String> visibleBts = Collections.synchronizedSet(new HashSet<String>(10));
 	
 	private SimpleLocationProbe locationProbe;
 	private ActivityProbe activityProbe;
@@ -48,6 +54,7 @@ public class CurrentState implements DataListener {
 	private ProximitySensorProbe proximityProbe;
 	private BatteryProbe batteryProbe;
 	private RingerVolumeProbe ringerProbe;
+	private BluetoothProbe bluetoothProbe;
 	
 	private volatile boolean enabled = false;
 	
@@ -63,6 +70,7 @@ public class CurrentState implements DataListener {
 		PROBE_VAL_TO_ATTR.put("confidence", "activity_confidence");
 		PROBE_VAL_TO_ATTR.put("ringer_mode", "ringer");
 		PROBE_VAL_TO_ATTR.put("wifi_count", "wifi_count");
+		PROBE_VAL_TO_ATTR.put("bt_count", "bt_count");
 	}
 	
 	private static final String[] ACTIVITY_NAMES = {
@@ -83,7 +91,7 @@ public class CurrentState implements DataListener {
 	private static final List<String> ALL_TYPES;
 	static {
 		ALL_TYPES = new ArrayList<String>(15);
-		//ALL_TYPES.add("day");
+		ALL_TYPES.add("day");
 		ALL_TYPES.add("time");
 		ALL_TYPES.addAll(Arrays.asList(TYPES_NEEDING_INIT));
 		ALL_TYPES.addAll(Arrays.asList(ACTIVITY_NAMES));
@@ -110,6 +118,7 @@ public class CurrentState implements DataListener {
         proximityProbe = gson.fromJson(new JsonObject(),ProximitySensorProbe.class);
         batteryProbe = gson.fromJson(new JsonObject(), BatteryProbe.class);
         ringerProbe = gson.fromJson(new JsonObject(), RingerVolumeProbe.class);
+        bluetoothProbe = gson.fromJson(new JsonObject(), BluetoothProbe.class);
         
         funfManager.requestData(this, locationProbe.getConfig());
         activityProbe.registerPassiveListener(this); //scheduling in probe
@@ -120,6 +129,7 @@ public class CurrentState implements DataListener {
         funfManager.requestData(this, wifiProbe.getConfig());
         funfManager.requestData(this, proximityProbe.getConfig());
         funfManager.requestData(this, batteryProbe.getConfig());
+        funfManager.requestData(this, bluetoothProbe.getConfig());
         ringerProbe.registerPassiveListener(this);
         enabled = true;
 	}
@@ -144,7 +154,7 @@ public class CurrentState implements DataListener {
 		// update time & date info
 		Calendar cal = Calendar.getInstance();
 		
-		/* Skipping day of week for now
+
 		int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
 		int convertedDayOfWeek = 0;
 		if (dayOfWeek == Calendar.SUNDAY) {
@@ -153,7 +163,6 @@ public class CurrentState implements DataListener {
 			convertedDayOfWeek = dayOfWeek - 2;
 		}
 		values.put("day", (double) convertedDayOfWeek);
-		*/
 
 		int minuteIntoDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
 		values.put("time", (double) minuteIntoDay);
@@ -243,13 +252,25 @@ public class CurrentState implements DataListener {
 		} else if (probeType.endsWith("BatteryProbe")) {
 			double charging = data.get("plugged").getAsDouble();
 			addValue("plugged", charging);
+		} else if (probeType.endsWith("BluetoothProbe")) {
+			long currentTimeInSeconds = System.currentTimeMillis() / 1000;
+			long timeSinceLastUpdate = currentTimeInSeconds - lastBtTime;
+			lastBtTime = currentTimeInSeconds;
+			if (timeSinceLastUpdate > BT_WAIT_PERIOD) {
+				visibleBts.clear();
+			}
+			
+			IJsonObject deviceInfo = data.getAsJsonObject("android.bluetooth.device.extra.DEVICE");
+			String mac = deviceInfo.get("mAddress").getAsString();
+			visibleBts.add(mac);
+			
+			addValue("bt_count", visibleBts.size());
 		}  else {
 			Log.e("CurrentState", "PROBE NOT RECOGNIZED!! -> " + probeType);
 		}
 		
 
 		if (typesWaitingInit.isEmpty()){
-			//TODO: this is kinda hacky
 			Log.d("CurrentState", "State updated");
 		} else {
 			Log.d("CurrentState", "State still incomplete. Need: " + typesWaitingInit.toString());
