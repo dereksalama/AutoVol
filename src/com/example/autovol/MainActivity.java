@@ -45,10 +45,10 @@ import edu.mit.media.funf.probe.builtin.WifiProbe;
 
 public class MainActivity extends Activity {
 	// Local host
-	private static final String BASE_URL = "http://10.0.1.17:8080";
+	//private static final String BASE_URL = "http://10.0.1.17:8080";
 	
 	// AWS host
-	//private static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
+	private static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
 	
 	public static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
 	public static final String PIPELINE_NAME = "default";
