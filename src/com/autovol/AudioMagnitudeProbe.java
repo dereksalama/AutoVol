@@ -35,7 +35,7 @@ public class AudioMagnitudeProbe extends Base implements PassiveProbe {
 	private AlarmReceiver alarmReceiver;
 	private AlarmManager alarmMan;
 	private PendingIntent alarmIntent;
-	private static final int INTERVAL_SECONDS = 60 * 5;
+	private static final int INTERVAL_SECONDS = 60 * 3;
 	private static final int INTERVAL_MILLIS = INTERVAL_SECONDS * 1000;
 	
 

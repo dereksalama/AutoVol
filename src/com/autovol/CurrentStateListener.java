@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -18,6 +19,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.FunfManager;
+import edu.mit.media.funf.Schedule;
+import edu.mit.media.funf.Schedule.BasicSchedule;
+import edu.mit.media.funf.Schedule.DefaultSchedule;
 import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.probe.Probe.DataListener;
 import edu.mit.media.funf.probe.builtin.BatteryProbe;
@@ -99,7 +103,12 @@ public class CurrentStateListener implements DataListener {
 	        audioMagProbe = gson.fromJson(new JsonObject(), AudioMagnitudeProbe.class);
 	        screenProbe = gson.fromJson(new JsonObject(), ScreenProbe.class);
 	        
-	        funfManager.requestData(this, locationProbe.getConfig());
+	        BasicSchedule locSched = new BasicSchedule();
+	        locSched.setInterval(BigDecimal.valueOf(300));
+	        locSched.setOpportunistic(true);
+	        locSched.setStrict(false);
+	        funfManager.requestData(this, locationProbe.getConfig(), locSched);
+	        
 	        activityProbe.registerPassiveListener(this); //scheduling in probe
 	        //funfManager.requestData(this, bluetoothProbe.getConfig());
 	        

@@ -56,23 +56,6 @@
         android:text="--"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignRight="@+id/textView2"
-        android:layout_centerVertical="true"
-        android:text="Label prob:"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
-
-    <TextView
-        android:id="@+id/gm_label_prob_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/cluster_prob_text"
-        android:layout_centerVertical="true"
-        android:text="--"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
-
     <Button
         android:id="@+id/archive_button"
         android:layout_width="wrap_content"
@@ -87,8 +70,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignRight="@+id/button1"
-        android:layout_marginBottom="28dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="30dp"
         android:text="test_upload" />
+
+    <TextView
+        android:id="@+id/gm_label_prob_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/gm_cluster_prob_text"
+        android:layout_centerVertical="true"
+        android:text="--"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/textView2"
+        android:layout_centerVertical="true"
+        android:text="Label prob:"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
 </RelativeLayout>

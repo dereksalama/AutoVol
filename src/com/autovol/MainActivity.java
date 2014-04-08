@@ -35,7 +35,7 @@ import edu.mit.media.funf.FunfManager;
 
 public class MainActivity extends Activity {
 
-	private static final String GM_URL = "/AutoVolWeb/GMClassifyServlet";
+	public static final String GM_URL = "/AutoVolWeb/GMClassifyServlet";
 
 
 	private FunfManager funfManager;
@@ -52,6 +52,8 @@ public class MainActivity extends Activity {
 	        
 	        ArchiveAlarm.scheduleRepeatedArchive(MainActivity.this);
 	        UploadAlarm.scheduleDailyUpload(MainActivity.this);
+	        //TODO:
+	        //ClassifyAlarm.scheduleRepeatedAlarm(MainActivity.this);
 	    }
 	    
 	    @Override
