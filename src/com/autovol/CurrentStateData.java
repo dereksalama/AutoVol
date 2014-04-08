@@ -20,6 +20,7 @@ public class CurrentStateData {
 	private double audioMag;
 	private String screenOn;
 	private double screenLastOn;
+
 	private String ringer;
 	
 	public CurrentStateData() {} 

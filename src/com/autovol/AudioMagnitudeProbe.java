@@ -38,6 +38,7 @@ public class AudioMagnitudeProbe extends Base implements PassiveProbe {
 	private static final int INTERVAL_SECONDS = 60 * 5;
 	private static final int INTERVAL_MILLIS = INTERVAL_SECONDS * 1000;
 	
+
 	@Configurable
     private String fileNameBase = "audiorectest";
 
@@ -60,6 +61,7 @@ public class AudioMagnitudeProbe extends Base implements PassiveProbe {
 
 		}
 	}
+
 
     private class RecordingCountDown extends CountDownTimer {
 
@@ -111,12 +113,14 @@ public class AudioMagnitudeProbe extends Base implements PassiveProbe {
 		alarmMan.cancel(alarmIntent);
 		getContext().unregisterReceiver(alarmReceiver);
 		super.onDisable();
+
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         Log.d("AudioCaptureProbe", "Probe initialization");
+
         mFileName = mFolderPath + "/" + FILENAME + ".mp4";
         
         mCountDown = new RecordingCountDown(TimeUtil.secondsToMillis(recordingLength), 1000);
@@ -134,7 +138,6 @@ public class AudioMagnitudeProbe extends Base implements PassiveProbe {
         mRecorder.setOutputFile(mFileName);
         mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 
-
         try {
             mRecorder.prepare();
             Log.d(LogUtil.TAG, "AudioMagnitudeProbe: Recording audio start");
@@ -142,6 +145,7 @@ public class AudioMagnitudeProbe extends Base implements PassiveProbe {
             mRecorder.getMaxAmplitude(); // just get rid of first call
         } catch (IOException e) {
             Log.e(LogUtil.TAG, "AudioMagnitudeProbe: Error in preparing MediaRecorder");
+
             Log.e(LogUtil.TAG, e.getLocalizedMessage());
             return false;
         }
@@ -160,13 +164,13 @@ public class AudioMagnitudeProbe extends Base implements PassiveProbe {
         if (f.exists()) {
         	f.delete(); // if we aren't using this, delete
         }
-        
+
         Log.d("AudioMagnitudeProbe", "Recording audio stop: " + audioMagnitude);
+
         JsonObject data = new JsonObject();
         //data.addProperty(FILENAME, mFileName);
         data.addProperty("audio_mag", audioMagnitude);
         sendData(data);
-        //stop();
     }
     
     private void abortRecording() {
@@ -174,7 +178,6 @@ public class AudioMagnitudeProbe extends Base implements PassiveProbe {
         mRecorder.reset();
         mRecorder.release();
         mRecorder = null;
-        //stop();
     }
 
 }

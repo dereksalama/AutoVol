@@ -35,8 +35,8 @@ import edu.mit.media.funf.FunfManager;
 
 public class MainActivity extends Activity {
 
-	//private static final String SMO_URL =  "/AutoVolWeb/SMOClassifyServlet";
 	private static final String GM_URL = "/AutoVolWeb/GMClassifyServlet";
+
 
 	private FunfManager funfManager;
 	

@@ -55,6 +55,7 @@ public class CurrentStateListener implements DataListener {
 	private static final String[] TYPES_NEEDING_INIT = { "lat" , "lon",
 		"loc_provider", "activity_confidence", "light", "distance", "wifi_count", "charging",
 		"activity_type", "audio_mag", "screen_on", "screen_last_on", "ringer"};
+
 	private Set<String> typesWaitingInit;
 	
 	private static final CurrentStateListener INSTANCE = new CurrentStateListener();
@@ -109,6 +110,7 @@ public class CurrentStateListener implements DataListener {
 	        funfManager.requestData(this, wifiProbe.getConfig());
 	        funfManager.requestData(this, proximityProbe.getConfig());
 	        funfManager.requestData(this, batteryProbe.getConfig());
+
 	        funfManager.requestData(this, screenProbe.getConfig());
 	        ringerProbe.registerPassiveListener(this);
 	        enabled = true;
