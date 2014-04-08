@@ -14,7 +14,7 @@ import android.util.Log;
 
 public class UploadService extends IntentService {
 	
-	private static final String UPLOAD_URL = MainActivity.BASE_URL +
+	private static final String UPLOAD_URL =
 			"/AutoVolWeb/DataUploadServlet";
 	private static final int MAX_BUFFER_SIZE = 1*1024*1024;
 	
@@ -28,6 +28,7 @@ public class UploadService extends IntentService {
 	 */
 	@Override
 	protected void onHandleIntent(Intent intent) {
+		Log.d("UploadService", "intent received");
 		HttpURLConnection conn = null;
 		FileInputStream fileInput = null;
 		DataOutputStream outputStream = null;
@@ -37,7 +38,8 @@ public class UploadService extends IntentService {
 		try {
 			fileInput = openFileInput(CurrentStateListener.SAVED_FILE);
 
-			URL url = new URL(UPLOAD_URL);
+			String fullUrl = AppPrefs.getBaseUrl(this) + UPLOAD_URL;
+			URL url = new URL(fullUrl);
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setDoOutput(true);
 			conn.setChunkedStreamingMode(0);
@@ -60,12 +62,17 @@ public class UploadService extends IntentService {
 				bufferSize = Math.min(bytesAvailable, MAX_BUFFER_SIZE);
 				bytesRead = fileInput.read(buffer, 0, bufferSize);
 			}
+			String closingBracket = "]"; // complete list
+			outputStream.write(closingBracket.getBytes());
 			int serverResponseCode = conn.getResponseCode();
 			fileInput.close();
+
 			if (serverResponseCode == HttpURLConnection.HTTP_ACCEPTED) {
-				File savedFile = new File(getFilesDir(), CurrentStateListener.SAVED_FILE);
+				Log.d("UploadService", "success, deleting");
+				File savedFile = getFileStreamPath(CurrentStateListener.SAVED_FILE);
 				savedFile.delete();
 			}
+
 			outputStream.flush();
 			outputStream.close();
 		} catch (MalformedURLException e) {

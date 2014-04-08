@@ -9,9 +9,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -21,28 +18,25 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.autovol.GMClassifyResponse;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.FunfManager;
 
 public class MainActivity extends Activity {
-	// Local host
-	public static final String BASE_URL = "http://10.0.1.17:8080";
-	
-	// AWS host
-	//public static final String BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
-	
-	private static final String SMO_URL = BASE_URL + "/AutoVolWeb/SMOClassifyServlet";
-	private static final String GM_URL = BASE_URL + "/AutoVolWeb/GMClassifyServlet";
+
+	//private static final String SMO_URL =  "/AutoVolWeb/SMOClassifyServlet";
+	private static final String GM_URL = "/AutoVolWeb/GMClassifyServlet";
 
 	private FunfManager funfManager;
 	
@@ -116,7 +110,28 @@ public class MainActivity extends Activity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
+		
+		boolean checkLocalUrl = AppPrefs.useLocalHost(this);
+		menu.findItem(R.id.action_base_url).setChecked(checkLocalUrl);
 		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle action bar item clicks here. The action bar will
+		// automatically handle clicks on the Home/Up button, so long
+		// as you specify a parent activity in AndroidManifest.xml.
+		int id = item.getItemId();
+		if (id == R.id.action_base_url) {
+			if (item.isChecked()) {
+				item.setChecked(false);
+				AppPrefs.setUseLocalHost(false, this);
+			} else {
+				item.setChecked(true);
+				AppPrefs.setUseLocalHost(true, this);
+			}
+		}
+		return super.onOptionsItemSelected(item);
 	}
 	
     private boolean servicesConnected() {
@@ -137,73 +152,18 @@ public class MainActivity extends Activity {
         }
     }
     
-    private void remoteClassifySMO() {
-    	if (!CurrentStateListener.get().dataIsReady()) {
-    		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
-    		return;
-    	}
-    	//TODO: this is not currently going to work
-    	String reqUrl = SMO_URL + "?" + "state=" + CurrentStateListener.get().currentStateJson();
-    	
-    	new AsyncTask<String, Void, Double>() {
-
-			@Override
-			protected Double doInBackground(String... urls) {
-				HttpURLConnection urlConnection = null;
-			    try {
-			    	URL url = new URL(urls[0]);
-			    	urlConnection = (HttpURLConnection) url.openConnection();
-			      InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-			      BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, "UTF-8")); 
-			      StringBuilder responseStrBuilder = new StringBuilder();
-
-			      String inputStr;
-			      while ((inputStr = streamReader.readLine()) != null)
-			          responseStrBuilder.append(inputStr);
-			      
-			      JSONObject result = new JSONObject(responseStrBuilder.toString());
-			      Double ringer = result.getDouble("ringer_type");
-			      return ringer;
-			    } catch (MalformedURLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} finally {
-			    	if (urlConnection != null)
-			    		urlConnection.disconnect();
-			    }
-				
-			    return null;
-			}
-			
-			@Override
-			protected void onPostExecute(Double result) {
-				if (result != null) {
-					//suggestionText.setText(result.toString());
-					Toast.makeText(MainActivity.this, "New Suggestion: " + result.toString(), Toast.LENGTH_SHORT).show();
-				}
-			}
-    		
-		}.execute(reqUrl);
-    }
-    
     private void remoteClassifyGM() {
     	if (!CurrentStateListener.get().dataIsReady()) {
     		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
     		return;
     	}
     	
-    	String reqUrl = GM_URL + "?" + "target=" + CurrentStateListener.get().currentStateJson();
+    	String reqUrl = AppPrefs.getBaseUrl(this) + GM_URL + "?" + "target=" + CurrentStateListener.get().currentStateJson();
     	
-    	new AsyncTask<String, Void, GMClassifyResponse>() {
+    	new AsyncTask<String, Void, String>() {
 
     		@Override
-    		protected GMClassifyResponse doInBackground(String... urls) {
+    		protected String doInBackground(String... urls) {
     			HttpURLConnection urlConnection = null;
     			try {
     				URL url = new URL(urls[0]);
@@ -216,15 +176,10 @@ public class MainActivity extends Activity {
     				while ((inputStr = streamReader.readLine()) != null)
     					responseStrBuilder.append(inputStr);
 
-    				Gson gson = new Gson();
-    				GMClassifyResponse response = gson.fromJson(responseStrBuilder.toString(),
-    						GMClassifyResponse.class);
-    				return response;
+    				return responseStrBuilder.toString();
     			} catch (MalformedURLException e) {
-    				// TODO Auto-generated catch block
     				e.printStackTrace();
     			} catch (IOException e) {
-    				// TODO Auto-generated catch block
     				e.printStackTrace();
     			} finally {
     				if (urlConnection != null)
@@ -235,12 +190,15 @@ public class MainActivity extends Activity {
     		}
 
     		@Override
-    		protected void onPostExecute(GMClassifyResponse result) {
+    		protected void onPostExecute(String result) {
     			if (result != null) {
-    				gmLabel.setText(result.getRinger());
-    				gmLabelProb.setText(result.getProbOfLabel().toString());
-    				gmClusterProb.setText(result.getProbOfCluster().toString());
-    				Toast.makeText(MainActivity.this, "Classification Complete", Toast.LENGTH_SHORT).show();
+    				Gson gson = new Gson();
+    				JsonElement jelem = gson.fromJson(result, JsonElement.class);
+    				JsonObject json = jelem.getAsJsonObject();
+    				gmLabel.setText(json.get("label").getAsString());
+    				gmLabelProb.setText("" + json.get("prob_label").getAsDouble());
+    				gmClusterProb.setText("" + json.get("prob_cluster").getAsDouble());
+    				Toast.makeText(MainActivity.this, "Classification Complete: " + json, Toast.LENGTH_SHORT).show();
     			}
     		}
 

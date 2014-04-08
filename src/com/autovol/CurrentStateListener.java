@@ -13,7 +13,6 @@ import java.util.Set;
 import android.content.Context;
 import android.util.Log;
 
-import com.autovol.CurrentStateData;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -23,6 +22,7 @@ import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.probe.Probe.DataListener;
 import edu.mit.media.funf.probe.builtin.BatteryProbe;
 import edu.mit.media.funf.probe.builtin.ProximitySensorProbe;
+import edu.mit.media.funf.probe.builtin.ScreenProbe;
 import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
 import edu.mit.media.funf.probe.builtin.WifiProbe;
 
@@ -33,6 +33,8 @@ public class CurrentStateListener implements DataListener {
 	private volatile long lastWifiTime = 0;
 	private final Set<String> visibleWifis = Collections.synchronizedSet(new HashSet<String>(10));
 	
+	private volatile long lastScreenOnTime = System.currentTimeMillis();
+	
 	private SimpleLocationProbe locationProbe;
 	private ActivityProbe activityProbe;
 	private MyLightSensorProbe lightProbe;
@@ -40,6 +42,8 @@ public class CurrentStateListener implements DataListener {
 	private ProximitySensorProbe proximityProbe;
 	private BatteryProbe batteryProbe;
 	private RingerVolumeProbe ringerProbe;
+	private AudioMagnitudeProbe audioMagProbe;
+	private ScreenProbe screenProbe;
 	
 	private volatile boolean enabled = false;
 	
@@ -50,7 +54,7 @@ public class CurrentStateListener implements DataListener {
 	
 	private static final String[] TYPES_NEEDING_INIT = { "lat" , "lon",
 		"loc_provider", "activity_confidence", "light", "distance", "wifi_count", "charging",
-		"activity_type", "ringer"};
+		"activity_type", "audio_mag", "screen_on", "screen_last_on", "ringer"};
 	private Set<String> typesWaitingInit;
 	
 	private static final CurrentStateListener INSTANCE = new CurrentStateListener();
@@ -91,17 +95,21 @@ public class CurrentStateListener implements DataListener {
 	        proximityProbe = gson.fromJson(new JsonObject(),ProximitySensorProbe.class);
 	        batteryProbe = gson.fromJson(new JsonObject(), BatteryProbe.class);
 	        ringerProbe = gson.fromJson(new JsonObject(), RingerVolumeProbe.class);
+	        audioMagProbe = gson.fromJson(new JsonObject(), AudioMagnitudeProbe.class);
+	        screenProbe = gson.fromJson(new JsonObject(), ScreenProbe.class);
 	        
 	        funfManager.requestData(this, locationProbe.getConfig());
 	        activityProbe.registerPassiveListener(this); //scheduling in probe
 	        //funfManager.requestData(this, bluetoothProbe.getConfig());
 	        
 	        lightProbe.registerPassiveListener(this);
+	        audioMagProbe.registerPassiveListener(this);
 	        //audioProbe.registerPassiveListener(this);
 	        
 	        funfManager.requestData(this, wifiProbe.getConfig());
 	        funfManager.requestData(this, proximityProbe.getConfig());
 	        funfManager.requestData(this, batteryProbe.getConfig());
+	        funfManager.requestData(this, screenProbe.getConfig());
 	        ringerProbe.registerPassiveListener(this);
 	        enabled = true;
 		}
@@ -203,6 +211,19 @@ public class CurrentStateListener implements DataListener {
 			} else {
 				currentState.setCharging("true");
 			}
+		} else if (probeType.endsWith("ScreenProbe")) {
+			typesWaitingInit.remove("screen_on");
+			typesWaitingInit.remove("screen_last_on");
+			String screenState = data.get("screenOn").getAsString();
+			if (screenState.equalsIgnoreCase("TRUE")) {
+				lastScreenOnTime = System.currentTimeMillis();
+			}
+			currentState.setScreenLastOn(System.currentTimeMillis() - lastScreenOnTime);
+			currentState.setScreenOn(screenState);
+		} else if (probeType.endsWith("AudioMagnitudeProbe")) {
+			typesWaitingInit.remove("audio_mag");
+			int mag = data.get("audio_mag").getAsInt();
+			currentState.setAudioMag(mag);
 		}  else {
 			Log.e("CurrentState", "PROBE NOT RECOGNIZED!! -> " + probeType);
 		}
@@ -232,19 +253,29 @@ public class CurrentStateListener implements DataListener {
 	public void saveRecentObservations(Context c) {
 		OutputStream outputStream;
 		if (savedStates.isEmpty()) {
+			Log.d("CurrentStateListener", "no states to save");
 			return;
 		}
+		String json = serializeRecentObservations();
+		int closingBracket = json.lastIndexOf(']');
+		String editedJson = json.substring(0, closingBracket);
 		try {
+			if (c.getFileStreamPath(SAVED_FILE).exists()) {
+				editedJson = new StringBuilder(editedJson)
+					.deleteCharAt(0)
+					.insert(0, ',')
+					.toString();
+			}
 			outputStream = new BufferedOutputStream(
 					c.openFileOutput(SAVED_FILE, Context.MODE_APPEND));
-			String json = serializeRecentObservations();
-			outputStream.write(json.getBytes());
+			
+			outputStream.write(editedJson.getBytes());
 			outputStream.close();
 			savedStates.clear();
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+			Log.d("CurrentStateListener", "archive file not found" + e.getMessage());
 		} catch (IOException e) {
-			e.printStackTrace();
+			Log.d("CurrentStateListener", "archive io exception" + e.getMessage());
 		}
 	}
 }
