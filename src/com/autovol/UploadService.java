@@ -52,6 +52,11 @@ public class UploadService extends IntentService {
 				Log.d("UploadService", "Nothing to upload");
 				return;
 			}
+			
+			// write account first
+			outputStream.writeChars(AppPrefs.getAccountHash(this) + "\n");
+			
+			
 			bufferSize = Math.min(bytesAvailable, MAX_BUFFER_SIZE);
 			buffer = new byte[bufferSize];
 

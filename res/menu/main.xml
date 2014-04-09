@@ -4,5 +4,8 @@
         android:id="@+id/action_base_url"
         android:checkable="true"
         android:title="local"/>
+    <item
+        android:id="@+id/action_new_account"
+        android:title= "new account" />
 
 </menu>

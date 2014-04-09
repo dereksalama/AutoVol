@@ -47,7 +47,8 @@ public class ClassifyService extends IntentService {
 		}
 		
     	String reqUrl = AppPrefs.getBaseUrl(this) + MainActivity.GM_URL + "?" + 
-    			"target=" + CurrentStateListener.get().currentStateJson();
+    			"target=" + CurrentStateListener.get().currentStateJson() +
+    			"&user=" + AppPrefs.getAccountHash(this);
 		String time = new SimpleDateFormat("dd HH:mm", Locale.US).format(new Date());
     	
     	HttpURLConnection urlConnection = null;

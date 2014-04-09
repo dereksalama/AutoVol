@@ -5,10 +5,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -25,6 +27,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;
@@ -37,7 +40,7 @@ public class MainActivity extends Activity {
 
 	public static final String GM_URL = "/AutoVolWeb/GMClassifyServlet";
 
-
+	private static int GET_ACCT_REQUEST_CODE = 1;
 	private FunfManager funfManager;
 	
 	private TextView gmLabel, gmClusterProb, gmLabelProb;
@@ -99,6 +102,31 @@ public class MainActivity extends Activity {
 	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
 	    
 	    Log.d("MainActivity", "Play Services Connected: " + servicesConnected());
+	    
+	    if (AppPrefs.isFreshInstall(this)) {
+	    	chooseNewAccount();
+	    }
+	}
+
+	private void chooseNewAccount() {
+		
+		Intent intent = AccountPicker.newChooseAccountIntent(null, null, new String[]{"com.google"},
+		         false, null, null, null, null);
+		 startActivityForResult(intent, GET_ACCT_REQUEST_CODE);
+		 
+	}
+	
+	@Override
+	protected void onActivityResult(final int requestCode, final int resultCode,
+			final Intent data) {
+		if (requestCode == GET_ACCT_REQUEST_CODE && resultCode == RESULT_OK) {
+			String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+			try {
+				AppPrefs.setAccountHash(this, accountName);
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			} 
+		}
 	}
 	
 	@Override
@@ -132,6 +160,8 @@ public class MainActivity extends Activity {
 				item.setChecked(true);
 				AppPrefs.setUseLocalHost(true, this);
 			}
+		} else if (id == R.id.action_new_account) {
+			chooseNewAccount();
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -160,7 +190,8 @@ public class MainActivity extends Activity {
     		return;
     	}
     	
-    	String reqUrl = AppPrefs.getBaseUrl(this) + GM_URL + "?" + "target=" + CurrentStateListener.get().currentStateJson();
+    	String reqUrl = AppPrefs.getBaseUrl(this) + GM_URL + "?" + "target=" + CurrentStateListener.get().currentStateJson() + 
+    			"&user=" + AppPrefs.getAccountHash(this);
     	
     	new AsyncTask<String, Void, String>() {
 

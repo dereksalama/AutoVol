@@ -37,6 +37,7 @@ public class ResultsActivity extends ListActivity {
 	public void onResume() {
 		super.onResume();
 		loadData();
+		getListView().setSelection(adapter.getCount() - 1);
 	}
 	
 	private void loadData() {
@@ -74,6 +75,7 @@ public class ResultsActivity extends ListActivity {
 			return true;
 		} else if (id == R.id.results_action_refresh) {
 			loadData();
+			getListView().setSelection(adapter.getCount() - 1);
 		}
 		return super.onOptionsItemSelected(item);
 	}
