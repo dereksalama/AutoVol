@@ -15,6 +15,7 @@ public class AppPrefs {
 	private static final String USER_ACCT_HASH = "user_acct_hash";
 	private static final String USER_ACCT_DNE = "no_acct";
 	private static final String CONTROL_RINGER = "set_ringer";
+	private static final String LAST_CLUSTER = "last_cluster";
 	
 	// Local host
 	private static final String LOCAL_BASE_URL = "http://10.0.1.17:8080";
@@ -71,6 +72,18 @@ public class AppPrefs {
 		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
 		SharedPreferences.Editor edit = sp.edit();
 		edit.putBoolean(CONTROL_RINGER, controlRinger);
+		edit.commit();
+	}
+	
+	public static Integer getLastCluster(Context c) {
+		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
+		return sp.getInt(LAST_CLUSTER, -1);
+	}
+	
+	public static void setLastCluster(Context c, Integer cluster) {
+		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences.Editor edit = sp.edit();
+		edit.putInt(LAST_CLUSTER, cluster);
 		edit.commit();
 	}
 }

@@ -4,18 +4,17 @@ import java.io.UnsupportedEncodingException;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 
 import com.google.android.gms.common.AccountPicker;
 
@@ -30,18 +29,32 @@ public class UserActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_user);
-
-		if (savedInstanceState == null) {
-			getFragmentManager().beginTransaction()
-					.add(R.id.container, new PlaceholderFragment()).commit();
-		}
-		
 	    
 	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
 	    
 	    if (AppPrefs.isFreshInstall(this)) {
 	    	chooseNewAccount();
 	    }
+	    
+	    CheckBox enableControl = (CheckBox) findViewById(R.id.checkbox_enable_control);
+	    enableControl.setChecked(AppPrefs.isControlRinger(this));
+	    enableControl.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				AppPrefs.setControlRinger(isChecked, UserActivity.this);
+				/* TODO
+				if (isChecked) {
+					ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
+				} else {
+					ClassifyAlarm.cancelAlarm(UserActivity.this);
+				}
+				*/
+			}
+		});
+	    
+	    // Clear some settings
+	    AppPrefs.setLastCluster(this, -1);
 	}
 	
 	@Override
@@ -83,23 +96,6 @@ public class UserActivity extends Activity {
 			} catch (UnsupportedEncodingException e) {
 				e.printStackTrace();
 			} 
-		}
-	}
-
-	/**
-	 * A placeholder fragment containing a simple view.
-	 */
-	public static class PlaceholderFragment extends Fragment {
-
-		public PlaceholderFragment() {
-		}
-
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container,
-				Bundle savedInstanceState) {
-			View rootView = inflater.inflate(R.layout.fragment_user, container,
-					false);
-			return rootView;
 		}
 	}
 	

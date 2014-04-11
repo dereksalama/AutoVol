@@ -1,20 +1,15 @@
 package com.autovol;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,6 +30,22 @@ public class TestActivity extends Activity {
 	
 	private TextView gmLabel, gmClusterProb, gmLabelProb;
 	private Button classifyButton, archiveButton, uploadButton;
+	
+	private BroadcastReceiver classifyReceiver = new BroadcastReceiver() {
+		
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String jsonStr = intent.getStringExtra("json");
+			Gson gson = new Gson();
+			JsonElement jelem = gson.fromJson(jsonStr, JsonElement.class);
+			JsonObject json = jelem.getAsJsonObject();
+			gmLabel.setText(json.get("label").getAsString());
+			gmLabelProb.setText("" + json.get("prob_label").getAsDouble());
+			gmClusterProb.setText("" + json.get("prob_cluster").getAsDouble());
+			Toast.makeText(TestActivity.this, "Classification Complete: " + json,
+					Toast.LENGTH_SHORT).show();
+		}
+	};
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +79,15 @@ public class TestActivity extends Activity {
 		gmLabel = (TextView) findViewById(R.id.gm_label_text);
 		gmClusterProb = (TextView) findViewById(R.id.gm_cluster_prob_text);
 		gmLabelProb = (TextView) findViewById(R.id.gm_label_prob_text);
-
+		
+		LocalBroadcastManager.getInstance(this).registerReceiver(classifyReceiver, 
+				new IntentFilter(ClassifyService.EVENT_CLASSIFY_RESULT));
+	}
+	
+	@Override
+	protected void onDestroy() {
+		LocalBroadcastManager.getInstance(this).unregisterReceiver(classifyReceiver);
+		super.onDestroy();
 	}
 
 	@Override
@@ -129,6 +148,10 @@ public class TestActivity extends Activity {
     		return;
     	}
     	
+    	Intent intent = new Intent(this, ClassifyService.class);
+    	startService(intent);
+    	
+    	/*
     	String reqUrl = AppPrefs.getBaseUrl(this) + GM_URL + "?" + "target=" + CurrentStateListener.get().currentStateJson() + 
     			"&user=" + AppPrefs.getAccountHash(this);
     	
@@ -175,5 +198,6 @@ public class TestActivity extends Activity {
     		}
 
     	}.execute(reqUrl);
+    	*/
     }
 }
