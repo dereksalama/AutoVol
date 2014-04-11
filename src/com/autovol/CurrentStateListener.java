@@ -19,9 +19,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import edu.mit.media.funf.FunfManager;
-import edu.mit.media.funf.Schedule;
 import edu.mit.media.funf.Schedule.BasicSchedule;
-import edu.mit.media.funf.Schedule.DefaultSchedule;
 import edu.mit.media.funf.json.IJsonObject;
 import edu.mit.media.funf.probe.Probe.DataListener;
 import edu.mit.media.funf.probe.builtin.BatteryProbe;
@@ -38,6 +36,8 @@ public class CurrentStateListener implements DataListener {
 	private final Set<String> visibleWifis = Collections.synchronizedSet(new HashSet<String>(10));
 	
 	private volatile long lastScreenOnTime = System.currentTimeMillis();
+	private volatile long lastObjectSaveMillis = System.currentTimeMillis();
+	private static final long OBJ_SAVE_INTERVAL = 15 * 1000;
 	
 	private SimpleLocationProbe locationProbe;
 	private ActivityProbe activityProbe;
@@ -69,7 +69,6 @@ public class CurrentStateListener implements DataListener {
 	
 	private CurrentStateListener() {
 		currentState = new CurrentStateData();
-		currentState.setTime(minutesIntoDay());
 		typesWaitingInit = Collections.synchronizedSet(new HashSet<String>(TYPES_NEEDING_INIT.length));
 		typesWaitingInit.addAll(Arrays.asList(TYPES_NEEDING_INIT));
 	}
@@ -79,13 +78,21 @@ public class CurrentStateListener implements DataListener {
 	}
 	
 	public String currentStateJson() {
+		CurrentStateData copy = new CurrentStateData(currentState);
+		copy.setTime(minutesIntoDay());
+		copy.setDay(dayOfWeek());
 		Gson gson = new Gson();
-		return gson.toJson(currentState, CurrentStateData.class);
+		return gson.toJson(copy, CurrentStateData.class);
 	}
 	
 	public int minutesIntoDay() {
 		Calendar cal = Calendar.getInstance();
 		return cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
+	}
+	
+	public int dayOfWeek() {
+		Calendar cal = Calendar.getInstance();
+		return cal.get(Calendar.DAY_OF_WEEK);
 	}
 	
 	public void enable(FunfManager funfManager) {
@@ -241,13 +248,18 @@ public class CurrentStateListener implements DataListener {
 		
 		if (dataIsReady()){
 			Log.d("CurrentState", "State updated");
-			int currentTime = minutesIntoDay();
-			if (currentState.getTime() < currentTime) {
-				Log.d("CurrentState", "Minute elapsed, creating new data obj");
-				savedStates.add(currentState);
-				CurrentStateData next = new CurrentStateData(currentState);
-				next.setTime(currentTime);
-				currentState = next;
+			synchronized(this) {
+				if (System.currentTimeMillis() >= lastObjectSaveMillis + OBJ_SAVE_INTERVAL) {
+					Log.d("CurrentState", "Time elapsed, creating new data obj");
+					lastObjectSaveMillis = System.currentTimeMillis();
+					currentState.setTime(minutesIntoDay());
+					currentState.setDay(dayOfWeek());
+					savedStates.add(currentState);
+					CurrentStateData next = new CurrentStateData(currentState);
+					currentState = next;
+				} else {
+					Log.d("CurrentState", "Not enough time passed");
+				}
 			}
 		} else {
 			Log.d("CurrentState", "State still incomplete. Need: " + typesWaitingInit.toString());

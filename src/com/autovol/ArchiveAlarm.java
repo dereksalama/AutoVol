@@ -13,8 +13,8 @@ public class ArchiveAlarm extends BroadcastReceiver {
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(c, 0, intent, 0);
 		AlarmManager alarmManager = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
 		
-		alarmManager.setInexactRepeating(AlarmManager.RTC, AlarmManager.INTERVAL_HALF_HOUR,
-				AlarmManager.INTERVAL_HALF_HOUR, pendingIntent);
+		alarmManager.setInexactRepeating(AlarmManager.RTC, AlarmManager.INTERVAL_FIFTEEN_MINUTES,
+				AlarmManager.INTERVAL_FIFTEEN_MINUTES, pendingIntent);
 	}
 	@Override
 	public void onReceive(Context context, Intent intent) {

@@ -14,6 +14,7 @@ public class AppPrefs {
 	private static final String PREF_USE_LOCAL_HOST = "use_local_host";
 	private static final String USER_ACCT_HASH = "user_acct_hash";
 	private static final String USER_ACCT_DNE = "no_acct";
+	private static final String CONTROL_RINGER = "set_ringer";
 	
 	// Local host
 	private static final String LOCAL_BASE_URL = "http://10.0.1.17:8080";
@@ -58,6 +59,18 @@ public class AppPrefs {
 		
 		SharedPreferences.Editor edit = sp.edit();
 		edit.putString(USER_ACCT_HASH, hash);
+		edit.commit();
+	}
+	
+	public static boolean isControlRinger(Context c) {
+		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
+		return sp.getBoolean(CONTROL_RINGER, false);
+	}
+	
+	public static void setControlRinger(boolean controlRinger, Context c) {
+		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences.Editor edit = sp.edit();
+		edit.putBoolean(CONTROL_RINGER, controlRinger);
 		edit.commit();
 	}
 }

@@ -12,13 +12,9 @@ import java.net.URL;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,48 +24,22 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.AccountPicker;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import edu.mit.media.funf.FunfManager;
-
-public class MainActivity extends Activity {
+public class TestActivity extends Activity {
 
 	public static final String GM_URL = "/AutoVolWeb/GMClassifyServlet";
-
 	private static int GET_ACCT_REQUEST_CODE = 1;
-	private FunfManager funfManager;
 	
 	private TextView gmLabel, gmClusterProb, gmLabelProb;
 	private Button classifyButton, archiveButton, uploadButton;
-	private ServiceConnection funfManagerConn = new ServiceConnection() {    
-	    @Override
-	    public void onServiceConnected(ComponentName name, IBinder service) {
-	    	Log.d("MainActivity", "onServiceConnected");
-	        funfManager = ((FunfManager.LocalBinder)service).getManager();
-
-	        CurrentStateListener.get().enable(funfManager);
-	        
-	        ArchiveAlarm.scheduleRepeatedArchive(MainActivity.this);
-	        UploadAlarm.scheduleDailyUpload(MainActivity.this);
-	        //TODO:
-	        //ClassifyAlarm.scheduleRepeatedAlarm(MainActivity.this);
-	    }
-	    
-	    @Override
-	    public void onServiceDisconnected(ComponentName name) {
-	        funfManager = null;
-	    }
-	};
-	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+		setContentView(R.layout.activity_test);
 		
 		classifyButton = (Button) findViewById(R.id.classify_button);
 		classifyButton.setOnClickListener(new OnClickListener() {
@@ -82,7 +52,7 @@ public class MainActivity extends Activity {
 		archiveButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Intent i = new Intent(MainActivity.this, ArchiveService.class);
+				Intent i = new Intent(TestActivity.this, ArchiveService.class);
 				startService(i);
 			}
 		});
@@ -90,7 +60,7 @@ public class MainActivity extends Activity {
 		uploadButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Intent i = new Intent(MainActivity.this, UploadService.class);
+				Intent i = new Intent(TestActivity.this, UploadService.class);
 				startService(i);
 			}
 		});
@@ -98,24 +68,9 @@ public class MainActivity extends Activity {
 		gmLabel = (TextView) findViewById(R.id.gm_label_text);
 		gmClusterProb = (TextView) findViewById(R.id.gm_cluster_prob_text);
 		gmLabelProb = (TextView) findViewById(R.id.gm_label_prob_text);
-	    
-	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
-	    
-	    Log.d("MainActivity", "Play Services Connected: " + servicesConnected());
-	    
-	    if (AppPrefs.isFreshInstall(this)) {
-	    	chooseNewAccount();
-	    }
+
 	}
 
-	private void chooseNewAccount() {
-		
-		Intent intent = AccountPicker.newChooseAccountIntent(null, null, new String[]{"com.google"},
-		         false, null, null, null, null);
-		 startActivityForResult(intent, GET_ACCT_REQUEST_CODE);
-		 
-	}
-	
 	@Override
 	protected void onActivityResult(final int requestCode, final int resultCode,
 			final Intent data) {
@@ -129,17 +84,11 @@ public class MainActivity extends Activity {
 		}
 	}
 	
-	@Override
-	protected void onDestroy() {
-		CurrentStateListener.get().disable(funfManager);
-		unbindService(funfManagerConn);
-		super.onDestroy();
-	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.main, menu);
+		getMenuInflater().inflate(R.menu.test, menu);
 		
 		boolean checkLocalUrl = AppPrefs.useLocalHost(this);
 		menu.findItem(R.id.action_base_url).setChecked(checkLocalUrl);
@@ -166,23 +115,13 @@ public class MainActivity extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 	
-    private boolean servicesConnected() {
-        // Check that Google Play services is available
-        int resultCode =
-                GooglePlayServicesUtil.
-                        isGooglePlayServicesAvailable(this);
-        // If Google Play services is available
-        if (ConnectionResult.SUCCESS == resultCode) {
-            // In debug mode, log the status
-            Log.d("Activity Recognition",
-                    "Google Play services is available.");
-            // Continue
-            return true;
-        // Google Play services was not available for some reason
-        } else {
-            return false;
-        }
-    }
+	private void chooseNewAccount() {
+		
+		Intent intent = AccountPicker.newChooseAccountIntent(null, null, new String[]{"com.google"},
+		         false, null, null, null, null);
+		 startActivityForResult(intent, GET_ACCT_REQUEST_CODE);
+		 
+	}
     
     private void remoteClassifyGM() {
     	if (!CurrentStateListener.get().dataIsReady()) {
@@ -231,7 +170,7 @@ public class MainActivity extends Activity {
     				gmLabel.setText(json.get("label").getAsString());
     				gmLabelProb.setText("" + json.get("prob_label").getAsDouble());
     				gmClusterProb.setText("" + json.get("prob_cluster").getAsDouble());
-    				Toast.makeText(MainActivity.this, "Classification Complete: " + json, Toast.LENGTH_SHORT).show();
+    				Toast.makeText(TestActivity.this, "Classification Complete: " + json, Toast.LENGTH_SHORT).show();
     			}
     		}
 
