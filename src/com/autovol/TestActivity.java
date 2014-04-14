@@ -19,16 +19,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.AccountPicker;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 public class TestActivity extends Activity {
 
-	public static final String GM_URL = "/AutoVolWeb/GMClassifyServlet";
+
 	private static int GET_ACCT_REQUEST_CODE = 1;
 	
-	private TextView gmLabel, gmClusterProb, gmLabelProb;
+	private TextView gmReg, gmAvg;
 	private Button classifyButton, archiveButton, uploadButton;
 	
 	private BroadcastReceiver classifyReceiver = new BroadcastReceiver() {
@@ -36,13 +33,14 @@ public class TestActivity extends Activity {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			String jsonStr = intent.getStringExtra("json");
-			Gson gson = new Gson();
-			JsonElement jelem = gson.fromJson(jsonStr, JsonElement.class);
-			JsonObject json = jelem.getAsJsonObject();
-			gmLabel.setText(json.get("label").getAsString());
-			gmLabelProb.setText("" + json.get("prob_label").getAsDouble());
-			gmClusterProb.setText("" + json.get("prob_cluster").getAsDouble());
-			Toast.makeText(TestActivity.this, "Classification Complete: " + json,
+			String type = intent.getStringExtra("type");
+			if (type.equalsIgnoreCase("reg")) {
+				gmReg.setText(jsonStr);
+			} else {
+				gmAvg.setText(jsonStr);
+			}
+
+			Toast.makeText(TestActivity.this, "Classification Complete: " + jsonStr,
 					Toast.LENGTH_SHORT).show();
 		}
 	};
@@ -76,12 +74,11 @@ public class TestActivity extends Activity {
 			}
 		});
 		
-		gmLabel = (TextView) findViewById(R.id.gm_label_text);
-		gmClusterProb = (TextView) findViewById(R.id.gm_cluster_prob_text);
-		gmLabelProb = (TextView) findViewById(R.id.gm_label_prob_text);
-		
 		LocalBroadcastManager.getInstance(this).registerReceiver(classifyReceiver, 
 				new IntentFilter(ClassifyService.EVENT_CLASSIFY_RESULT));
+		
+		gmReg = (TextView) findViewById(R.id.gm_regular);
+		gmAvg = (TextView) findViewById(R.id.gm_avg);
 	}
 	
 	@Override

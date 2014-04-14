@@ -4,11 +4,15 @@ import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import android.content.Context;
@@ -17,6 +21,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 
 import edu.mit.media.funf.FunfManager;
 import edu.mit.media.funf.Schedule.BasicSchedule;
@@ -52,8 +57,8 @@ public class CurrentStateListener implements DataListener {
 	private volatile boolean enabled = false;
 	
 	private CurrentStateData currentState;
-	private Set<CurrentStateData> savedStates = Collections.synchronizedSet(
-			new HashSet<CurrentStateData>());
+	private List<CurrentStateData> savedStates = Collections.synchronizedList(
+			new LinkedList<CurrentStateData>());
 	
 	
 	private static final String[] TYPES_NEEDING_INIT = { "lat" , "lon",
@@ -78,11 +83,27 @@ public class CurrentStateListener implements DataListener {
 	}
 	
 	public String currentStateJson() {
-		CurrentStateData copy = new CurrentStateData(currentState);
-		copy.setTime(minutesIntoDay());
-		copy.setDay(dayOfWeek());
+		if (savedStates.isEmpty()) {
+			return null;
+		}
+		CurrentStateData copy = new CurrentStateData(savedStates.get(savedStates.size() - 1));
 		Gson gson = new Gson();
-		return gson.toJson(copy, CurrentStateData.class);
+		return gson.toJson(copy);
+	}
+	
+	public String recentStatesJson(int numStates) {
+		if (savedStates.size() < numStates) {
+			return null;
+		}
+		
+		synchronized(savedStates) {
+			List<CurrentStateData> sublist = savedStates.subList(
+					savedStates.size() - numStates, savedStates.size());
+			List<CurrentStateData> arraySub = new ArrayList<CurrentStateData>(sublist);
+			Gson gson = new Gson();
+			Type type = new TypeToken<List<CurrentStateData>>(){}.getType();
+			return gson.toJson(arraySub, type);
+		}
 	}
 	
 	public int minutesIntoDay() {
@@ -267,17 +288,20 @@ public class CurrentStateListener implements DataListener {
 	}
 	
 	// Convert all states in memory to GSON serialization string
+	// ONLY CALL FROM SYNCHRONIZED
 	private String serializeRecentObservations() {
 		Gson gson = new Gson();
 		String result =  gson.toJson(savedStates);
 		return result;
 	}
 	
-	public void saveRecentObservations(Context c) {
+	public synchronized void saveRecentObservations(Context c) {
 		OutputStream outputStream;
 		if (savedStates.isEmpty()) {
 			Log.d("CurrentStateListener", "no states to save");
 			return;
+		} else {
+			Log.d("CurrentStateListener", "saving " + savedStates.size());
 		}
 		String json = serializeRecentObservations();
 		int closingBracket = json.lastIndexOf(']');
