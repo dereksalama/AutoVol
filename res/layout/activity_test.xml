@@ -46,7 +46,7 @@
             android:layout_height="wrap_content" 
             android:gravity="center">
             <TextView 
-                android:id="@+id/gm_regular"
+                android:id="@+id/knn_regular"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
         </TableRow>
@@ -56,7 +56,34 @@
             android:layout_height="wrap_content"
             android:gravity="center" >
             <TextView 
-                android:id="@+id/gm_avg"
+                android:id="@+id/knn_loc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center" >
+            <TextView 
+                android:id="@+id/knn_avg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center" >
+            <TextView 
+                android:id="@+id/knn_avg_loc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+                <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center" >
+            <TextView 
+                android:id="@+id/knn_cluster_loc"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
         </TableRow>

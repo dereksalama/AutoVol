@@ -43,13 +43,11 @@ public class UserActivity extends Activity {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 				AppPrefs.setControlRinger(isChecked, UserActivity.this);
-				/* TODO
 				if (isChecked) {
 					ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
 				} else {
 					ClassifyAlarm.cancelAlarm(UserActivity.this);
 				}
-				*/
 			}
 		});
 	    
@@ -80,6 +78,10 @@ public class UserActivity extends Activity {
 		int id = item.getItemId();
 		if (id == R.id.action_open_test) {
 			Intent intent = new Intent(this, TestActivity.class);
+			startActivity(intent);
+			return true;
+		} else if (id == R.id.action_open_results) {
+			Intent intent = new Intent(this, ResultsActivity.class);
 			startActivity(intent);
 			return true;
 		}

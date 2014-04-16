@@ -5,5 +5,8 @@
     <item
         android:id="@+id/action_open_test"
         android:title="testing"/>
+    <item 
+        android:id="@+id/action_open_results"
+        android:title="results"/>
 
 </menu>

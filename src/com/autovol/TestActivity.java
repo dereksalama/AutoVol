@@ -25,7 +25,7 @@ public class TestActivity extends Activity {
 
 	private static int GET_ACCT_REQUEST_CODE = 1;
 	
-	private TextView gmReg, gmAvg;
+	private TextView knnReg, knnLoc, knnAvg, knnAvgLoc, knnClusterLoc;
 	private Button classifyButton, archiveButton, uploadButton;
 	
 	private BroadcastReceiver classifyReceiver = new BroadcastReceiver() {
@@ -35,12 +35,18 @@ public class TestActivity extends Activity {
 			String jsonStr = intent.getStringExtra("json");
 			String type = intent.getStringExtra("type");
 			if (type.equalsIgnoreCase("reg")) {
-				gmReg.setText(jsonStr);
-			} else {
-				gmAvg.setText(jsonStr);
+				knnReg.setText(type + ": " + jsonStr);
+			} else if (type.equalsIgnoreCase("avg")) {
+				knnAvg.setText(type + ": " +jsonStr);
+			} else if (type.equalsIgnoreCase("loc")) {
+				knnLoc.setText(type + ": " +jsonStr);
+			} else if (type.equalsIgnoreCase("avg_loc")){
+				knnAvgLoc.setText(type + ": " +jsonStr);
+			} else if (type.equalsIgnoreCase("cluster_loc")){
+				knnClusterLoc.setText(type + ": " +jsonStr);
 			}
 
-			Toast.makeText(TestActivity.this, "Classification Complete: " + jsonStr,
+			Toast.makeText(TestActivity.this, type + " complete",
 					Toast.LENGTH_SHORT).show();
 		}
 	};
@@ -77,8 +83,11 @@ public class TestActivity extends Activity {
 		LocalBroadcastManager.getInstance(this).registerReceiver(classifyReceiver, 
 				new IntentFilter(ClassifyService.EVENT_CLASSIFY_RESULT));
 		
-		gmReg = (TextView) findViewById(R.id.gm_regular);
-		gmAvg = (TextView) findViewById(R.id.gm_avg);
+		knnReg = (TextView) findViewById(R.id.knn_regular);
+		knnAvg = (TextView) findViewById(R.id.knn_avg);
+		knnLoc = (TextView) findViewById(R.id.knn_loc);
+		knnAvgLoc = (TextView) findViewById(R.id.knn_avg_loc);
+		knnClusterLoc = (TextView) findViewById(R.id.knn_cluster_loc);
 	}
 	
 	@Override

@@ -287,23 +287,28 @@ public class CurrentStateListener implements DataListener {
 		}
 	}
 	
-	// Convert all states in memory to GSON serialization string
-	// ONLY CALL FROM SYNCHRONIZED
-	private String serializeRecentObservations() {
-		Gson gson = new Gson();
-		String result =  gson.toJson(savedStates);
-		return result;
-	}
-	
 	public synchronized void saveRecentObservations(Context c) {
+		if (savedStates.size() <= ClassifyService.NUM_VECTORS_TO_AVG) {
+			Log.d("CurrentStateListener", "not enough states");
+			return;
+		}
+		int numStatesToSave = savedStates.size() - ClassifyService.NUM_VECTORS_TO_AVG;
+		List<CurrentStateData> mostRecent = savedStates.subList(numStatesToSave, 
+				savedStates.size());
+		List<CurrentStateData> toSave = savedStates.subList(0, numStatesToSave);
+		
+		savedStates = mostRecent;
+		
 		OutputStream outputStream;
-		if (savedStates.isEmpty()) {
+		if (toSave.isEmpty()) {
 			Log.d("CurrentStateListener", "no states to save");
 			return;
 		} else {
-			Log.d("CurrentStateListener", "saving " + savedStates.size());
+			Log.d("CurrentStateListener", "saving " + toSave.size());
 		}
-		String json = serializeRecentObservations();
+		
+		Gson gson = new Gson();
+		String json =  gson.toJson(toSave);
 		int closingBracket = json.lastIndexOf(']');
 		String editedJson = json.substring(0, closingBracket);
 		try {
@@ -318,7 +323,6 @@ public class CurrentStateListener implements DataListener {
 			
 			outputStream.write(editedJson.getBytes());
 			outputStream.close();
-			savedStates.clear();
 		} catch (FileNotFoundException e) {
 			Log.d("CurrentStateListener", "archive file not found" + e.getMessage());
 		} catch (IOException e) {

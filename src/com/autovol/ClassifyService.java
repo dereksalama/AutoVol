@@ -25,9 +25,13 @@ public class ClassifyService extends IntentService {
 	
 	public static final String EVENT_CLASSIFY_RESULT = "classify_result";
 	
-	private static final String GM_URL = "/AutoVolWeb/GMClassifyServlet";
-	private static final String AVG_GM_URL = "/AutoVolWeb/AvGMClassifyServlet";
 	private static final String KNN_URL = "/AutoVolWeb/KnnClassifyServlet";
+	private static final String LOC_KNN_URL = "/AutoVolWeb/LocKnnClassifyServlet";
+	private static final String AVG_KNN_URL = "/AutoVolWeb/AvgKnnClassifyServlet";
+	private static final String AVG_LOC_KNN_URL = "/AutoVolWeb/AvgLocKnnClassifyServlet";
+	private static final String CLUSTER_LOC_KNN_URL = "/AutoVolWeb/ClusterLocKnnClassifyServlet";
+	
+	public static final int NUM_VECTORS_TO_AVG = 8;
 	
 	public ClassifyService() {
 		super("ClassifyService");
@@ -70,7 +74,7 @@ public class ClassifyService extends IntentService {
 			while ((inputStr = streamReader.readLine()) != null)
 				responseStrBuilder.append(inputStr);
 
-			saveResult(time + ": " + responseStrBuilder.toString());
+			saveResult(time + "(" + type + "): " + responseStrBuilder.toString() + "\n");
 
 			/*
 			Gson gson = new Gson();
@@ -137,19 +141,24 @@ public class ClassifyService extends IntentService {
 			return;
 		}
 		String knnReqUrl = constructUrl(KNN_URL, singleTarget);
-		doRequest(knnReqUrl, "knn");
+		doRequest(knnReqUrl, "reg");
 		
-		/*
-		String reqReqUrl = constructUrl(GM_URL, singleTarget);
-		doRequest(reqReqUrl, "reg");
+		String locKnnReqUrl = constructUrl(LOC_KNN_URL, singleTarget);
+		doRequest(locKnnReqUrl, "loc");
 		
-		String targetList = CurrentStateListener.get().recentStatesJson(4);
+		
+		String targetList = CurrentStateListener.get().recentStatesJson(NUM_VECTORS_TO_AVG);
 		if (targetList == null) {
 			Log.d("ClassifyService", "not enough states");
 			return;
 		}
-		String avgReqUrl = constructUrl(AVG_GM_URL, targetList);
-		doRequest(avgReqUrl, "avg");
-		*/
+		String avgKnnReqUrl = constructUrl(AVG_KNN_URL, targetList);
+		doRequest(avgKnnReqUrl, "avg");
+		
+		String avgLocKnnReqUrl = constructUrl(AVG_LOC_KNN_URL, targetList);
+		doRequest(avgLocKnnReqUrl, "avg_loc");
+		
+		String clusterLocKnnReqUrl = constructUrl(CLUSTER_LOC_KNN_URL, targetList);
+		doRequest(clusterLocKnnReqUrl, "cluster_loc");
 	}
 }
