@@ -30,7 +30,6 @@ import edu.mit.media.funf.probe.Probe.DataListener;
 import edu.mit.media.funf.probe.builtin.BatteryProbe;
 import edu.mit.media.funf.probe.builtin.ProximitySensorProbe;
 import edu.mit.media.funf.probe.builtin.ScreenProbe;
-import edu.mit.media.funf.probe.builtin.SimpleLocationProbe;
 import edu.mit.media.funf.probe.builtin.WifiProbe;
 
 public class CurrentStateListener implements DataListener {
@@ -44,7 +43,8 @@ public class CurrentStateListener implements DataListener {
 	private volatile long lastObjectSaveMillis = System.currentTimeMillis();
 	private static final long OBJ_SAVE_INTERVAL = 15 * 1000;
 	
-	private SimpleLocationProbe locationProbe;
+	//private SimpleLocationProbe locationProbe;
+	private MyLocationProbe myLocProbe;
 	private ActivityProbe activityProbe;
 	private MyLightSensorProbe lightProbe;
 	private WifiProbe wifiProbe;
@@ -119,7 +119,8 @@ public class CurrentStateListener implements DataListener {
 	public void enable(FunfManager funfManager) {
 		if (!enabled) {
 	        Gson gson = funfManager.getGson();
-	        locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
+	        //locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
+	        myLocProbe = gson.fromJson(new JsonObject(), MyLocationProbe.class);
 	        activityProbe = gson.fromJson(new JsonObject(), ActivityProbe.class);
 	        //audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
 	        //bluetoothProbe = gson.fromJson(new JsonObject(), BluetoothProbe.class);
@@ -135,13 +136,14 @@ public class CurrentStateListener implements DataListener {
 	        locSched.setInterval(BigDecimal.valueOf(300));
 	        locSched.setOpportunistic(true);
 	        locSched.setStrict(false);
-	        funfManager.requestData(this, locationProbe.getConfig(), locSched);
+	       // funfManager.requestData(this, locationProbe.getConfig(), locSched);
 	        
 	        activityProbe.registerPassiveListener(this); //scheduling in probe
 	        //funfManager.requestData(this, bluetoothProbe.getConfig());
 	        
 	        lightProbe.registerPassiveListener(this);
 	        audioMagProbe.registerPassiveListener(this);
+	        myLocProbe.registerPassiveListener(this);
 	        //audioProbe.registerPassiveListener(this);
 	        
 	        funfManager.requestData(this, wifiProbe.getConfig());
@@ -212,7 +214,7 @@ public class CurrentStateListener implements DataListener {
 			} else {
 				currentState.setRinger("normal");
 			}
-		} else if (probeType.endsWith("SimpleLocationProbe")) {
+		} /*else if (probeType.endsWith("SimpleLocationProbe")) {
 			double lat = data.get("mLatitude").getAsDouble();
 			typesWaitingInit.remove("lat");
 			currentState.setLat(lat);
@@ -222,6 +224,19 @@ public class CurrentStateListener implements DataListener {
 			currentState.setLon(lon);
 			
 			String provider = data.get("mProvider").getAsString();
+			typesWaitingInit.remove("loc_provider");
+			currentState.setLocProvider(provider);
+			
+		} */ else if (probeType.endsWith("MyLocationProbe")) {
+			double lat = data.get("lat").getAsDouble();
+			typesWaitingInit.remove("lat");
+			currentState.setLat(lat);
+			
+			double lon = data.get("lon").getAsDouble();
+			typesWaitingInit.remove("lon");
+			currentState.setLon(lon);
+			
+			String provider = data.get("provider").getAsString();
 			typesWaitingInit.remove("loc_provider");
 			currentState.setLocProvider(provider);
 			

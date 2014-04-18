@@ -1,7 +1,5 @@
 package com.autovol;
 
-import java.util.Calendar;
-
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -14,24 +12,17 @@ public class UploadAlarm extends BroadcastReceiver {
 	
 	private static final int HOUR_IN_MILLIS = 60 * 60 * 1000;
 	private static final int DAY_IN_MILLIS = 24 * HOUR_IN_MILLIS;
+	private static final int HALF_DAY_MILLIS = DAY_IN_MILLIS / 2;
 	
 	public static void scheduleDailyUpload(Context c) {
-		schedule(c, System.currentTimeMillis() + DAY_IN_MILLIS);
+		schedule(c, System.currentTimeMillis() + HALF_DAY_MILLIS);
 	}
 	
 	private void postpone(Context c) {
 		// make sure we don't go to next day
-		Calendar now = Calendar.getInstance();
 		long timeToTrigger = System.currentTimeMillis() + HOUR_IN_MILLIS;
-		Calendar later = Calendar.getInstance();
-		later.setTimeInMillis(timeToTrigger);
-		
-		if (now.get(Calendar.DATE) == later.get(Calendar.DATE)) {
-			schedule(c, timeToTrigger);
-		} else {
-			// need to get this in
-			upload(c);
-		}
+		schedule(c, timeToTrigger);
+
 	}
 	
 	private static void schedule(Context c, long triggerAtMillis) {

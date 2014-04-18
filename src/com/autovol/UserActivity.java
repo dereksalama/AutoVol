@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -17,6 +18,10 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 
 import com.google.android.gms.common.AccountPicker;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationRequest;
 
 import edu.mit.media.funf.FunfManager;
 
@@ -24,6 +29,7 @@ public class UserActivity extends Activity {
 	
 	private static int GET_ACCT_REQUEST_CODE = 1;
 	private FunfManager funfManager;
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -131,6 +137,4 @@ public class UserActivity extends Activity {
 		 startActivityForResult(intent, GET_ACCT_REQUEST_CODE);
 		 
 	}
-	
-
 }

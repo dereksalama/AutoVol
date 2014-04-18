@@ -1,9 +1,13 @@
 package com.autovol;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -76,6 +80,16 @@ public class UploadService extends IntentService {
 				Log.d("UploadService", "success, deleting");
 				File savedFile = getFileStreamPath(CurrentStateListener.SAVED_FILE);
 				savedFile.delete();
+			} else {
+				InputStream in = new BufferedInputStream(conn.getErrorStream());
+				BufferedReader errorReader = new BufferedReader(
+						new InputStreamReader(in, "UTF-8"));
+				StringBuilder responseStrBuilder = new StringBuilder();
+				String inputStr;
+				while ((inputStr = errorReader.readLine()) != null)
+					responseStrBuilder.append(inputStr);
+				
+				Log.d("UploadService", "err: " + responseStrBuilder.toString());
 			}
 
 			outputStream.flush();

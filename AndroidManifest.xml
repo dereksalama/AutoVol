@@ -89,6 +89,8 @@
 
         <service android:name="com.autovol.ArchiveService" >
         </service>
+        <service android:name="com.autovol.LocationService" >
+        </service>
         
         <receiver android:name="com.autovol.ClassifyAlarm"></receiver>
         <service android:name="com.autovol.ClassifyService"></service>
