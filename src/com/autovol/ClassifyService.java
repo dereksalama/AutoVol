@@ -30,6 +30,7 @@ public class ClassifyService extends IntentService {
 	private static final String AVG_KNN_URL = "/AutoVolWeb/AvgKnnClassifyServlet";
 	private static final String AVG_LOC_KNN_URL = "/AutoVolWeb/AvgLocKnnClassifyServlet";
 	private static final String CLUSTER_LOC_KNN_URL = "/AutoVolWeb/ClusterLocKnnClassifyServlet";
+	private static final String PROB_LOC_KNN_URL = "/AutoVolWeb/EmLocKnnClassifyServlet";
 	
 	public static final int NUM_VECTORS_TO_AVG = 8;
 	
@@ -145,6 +146,9 @@ public class ClassifyService extends IntentService {
 		
 		String locKnnReqUrl = constructUrl(LOC_KNN_URL, singleTarget);
 		doRequest(locKnnReqUrl, "loc");
+		
+		String probLocKnnReqUrl = constructUrl(PROB_LOC_KNN_URL, singleTarget);
+		doRequest(probLocKnnReqUrl, "prob_loc");
 		
 		
 		String targetList = CurrentStateListener.get().recentStatesJson(NUM_VECTORS_TO_AVG);

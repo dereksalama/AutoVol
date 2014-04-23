@@ -15,6 +15,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.util.Log;
 
@@ -67,6 +69,9 @@ public class CurrentStateListener implements DataListener {
 
 	private Set<String> typesWaitingInit;
 	
+	private PendingIntent archiveIntent;
+	private PendingIntent uploadIntent;
+	
 	private static final CurrentStateListener INSTANCE = new CurrentStateListener();
 	public static CurrentStateListener get() {
 		return INSTANCE;
@@ -116,7 +121,7 @@ public class CurrentStateListener implements DataListener {
 		return cal.get(Calendar.DAY_OF_WEEK);
 	}
 	
-	public void enable(FunfManager funfManager) {
+	public void enable(FunfManager funfManager, Context c) {
 		if (!enabled) {
 	        Gson gson = funfManager.getGson();
 	        //locationProbe = gson.fromJson(new JsonObject(), SimpleLocationProbe.class);
@@ -152,11 +157,14 @@ public class CurrentStateListener implements DataListener {
 
 	        funfManager.requestData(this, screenProbe.getConfig());
 	        ringerProbe.registerPassiveListener(this);
+	        
+	        archiveIntent = ArchiveAlarm.scheduleRepeatedArchive(c);
+	        uploadIntent = UploadAlarm.scheduleDailyUpload(c);
 	        enabled = true;
 		}
 	}
 	
-	public void disable(FunfManager funfManager) {
+	public void disable(FunfManager funfManager, Context c) {
 		if (enabled) {
 			enabled = false;
 			funfManager.unrequestAllData(this);
@@ -164,6 +172,9 @@ public class CurrentStateListener implements DataListener {
 			activityProbe.unregisterPassiveListener(this);
 			//audioProbe.unregisterPassiveListener(this);
 			ringerProbe.unregisterPassiveListener(this);
+			
+			((AlarmManager) c.getSystemService(Context.ALARM_SERVICE)).cancel(archiveIntent);
+			((AlarmManager) c.getSystemService(Context.ALARM_SERVICE)).cancel(uploadIntent);
 		}
 	}
 	
@@ -290,6 +301,7 @@ public class CurrentStateListener implements DataListener {
 					lastObjectSaveMillis = System.currentTimeMillis();
 					currentState.setTime(minutesIntoDay());
 					currentState.setDay(dayOfWeek());
+					currentState.setScreenLastOn(System.currentTimeMillis() - lastScreenOnTime); 
 					savedStates.add(currentState);
 					CurrentStateData next = new CurrentStateData(currentState);
 					currentState = next;

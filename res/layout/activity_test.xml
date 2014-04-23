@@ -78,12 +78,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
         </TableRow>
-                <TableRow
+        <TableRow
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center" >
             <TextView 
                 android:id="@+id/knn_cluster_loc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+         <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center" >
+            <TextView 
+                android:id="@+id/knn_prob_loc"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
         </TableRow>

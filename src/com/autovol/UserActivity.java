@@ -4,7 +4,6 @@ import java.io.UnsupportedEncodingException;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
-import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -18,10 +17,6 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 
 import com.google.android.gms.common.AccountPicker;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient;
-import com.google.android.gms.location.LocationClient;
-import com.google.android.gms.location.LocationRequest;
 
 import edu.mit.media.funf.FunfManager;
 
@@ -31,6 +26,7 @@ public class UserActivity extends Activity {
 	private FunfManager funfManager;
 
 
+	private CheckBox enableBox;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -42,17 +38,20 @@ public class UserActivity extends Activity {
 	    	chooseNewAccount();
 	    }
 	    
-	    CheckBox enableControl = (CheckBox) findViewById(R.id.checkbox_enable_control);
-	    enableControl.setChecked(AppPrefs.isControlRinger(this));
-	    enableControl.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+	    enableBox = (CheckBox) findViewById(R.id.checkbox_enable);
+	    enableBox.setChecked(AppPrefs.isControlRinger(this)); //TODO add to app prefs when ringer
+	    enableBox.setEnabled(false);
+	    enableBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 				AppPrefs.setControlRinger(isChecked, UserActivity.this);
 				if (isChecked) {
-					ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
+					//ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
+					CurrentStateListener.get().enable(funfManager, getApplicationContext());
 				} else {
-					ClassifyAlarm.cancelAlarm(UserActivity.this);
+					//ClassifyAlarm.cancelAlarm(UserActivity.this);
+					CurrentStateListener.get().disable(funfManager, getApplicationContext());
 				}
 			}
 		});
@@ -63,7 +62,7 @@ public class UserActivity extends Activity {
 	
 	@Override
 	protected void onDestroy() {
-		CurrentStateListener.get().disable(funfManager);
+		CurrentStateListener.get().disable(funfManager, getApplicationContext());
 		unbindService(funfManagerConn);
 		super.onDestroy();
 	}
@@ -113,12 +112,10 @@ public class UserActivity extends Activity {
 	    	Log.d("TestActivity", "onServiceConnected");
 	        funfManager = ((FunfManager.LocalBinder)service).getManager();
 
-	        CurrentStateListener.get().enable(funfManager);
-	        
-	        ArchiveAlarm.scheduleRepeatedArchive(UserActivity.this);
-	        UploadAlarm.scheduleDailyUpload(UserActivity.this);
-	        //TODO:
-	        //ClassifyAlarm.scheduleRepeatedAlarm(TestActivity.this);
+	        if (AppPrefs.isControlRinger(getApplicationContext())) {
+		        CurrentStateListener.get().enable(funfManager, getApplicationContext());
+	        }
+	        enableBox.setEnabled(true);
 	    }
 	    
 	    @Override

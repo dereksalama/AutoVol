@@ -25,7 +25,7 @@ public class TestActivity extends Activity {
 
 	private static int GET_ACCT_REQUEST_CODE = 1;
 	
-	private TextView knnReg, knnLoc, knnAvg, knnAvgLoc, knnClusterLoc;
+	private TextView knnReg, knnLoc, knnAvg, knnAvgLoc, knnClusterLoc, knnProbLoc;
 	private Button classifyButton, archiveButton, uploadButton;
 	
 	private BroadcastReceiver classifyReceiver = new BroadcastReceiver() {
@@ -44,6 +44,8 @@ public class TestActivity extends Activity {
 				knnAvgLoc.setText(type + ": " +jsonStr);
 			} else if (type.equalsIgnoreCase("cluster_loc")){
 				knnClusterLoc.setText(type + ": " +jsonStr);
+			} else if (type.equalsIgnoreCase("prob_loc")){
+				knnProbLoc.setText(type + ": " +jsonStr);
 			}
 
 			Toast.makeText(TestActivity.this, type + " complete",
@@ -88,6 +90,7 @@ public class TestActivity extends Activity {
 		knnLoc = (TextView) findViewById(R.id.knn_loc);
 		knnAvgLoc = (TextView) findViewById(R.id.knn_avg_loc);
 		knnClusterLoc = (TextView) findViewById(R.id.knn_cluster_loc);
+		knnProbLoc = (TextView) findViewById(R.id.knn_prob_loc);
 	}
 	
 	@Override

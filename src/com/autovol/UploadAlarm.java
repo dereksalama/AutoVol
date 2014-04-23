@@ -14,8 +14,8 @@ public class UploadAlarm extends BroadcastReceiver {
 	private static final int DAY_IN_MILLIS = 24 * HOUR_IN_MILLIS;
 	private static final int HALF_DAY_MILLIS = DAY_IN_MILLIS / 2;
 	
-	public static void scheduleDailyUpload(Context c) {
-		schedule(c, System.currentTimeMillis() + HALF_DAY_MILLIS);
+	public static PendingIntent scheduleDailyUpload(Context c) {
+		return schedule(c, System.currentTimeMillis() + HALF_DAY_MILLIS);
 	}
 	
 	private void postpone(Context c) {
@@ -25,12 +25,14 @@ public class UploadAlarm extends BroadcastReceiver {
 
 	}
 	
-	private static void schedule(Context c, long triggerAtMillis) {
+	private static PendingIntent schedule(Context c, long triggerAtMillis) {
 		Intent intent = new Intent(c, UploadAlarm.class);
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(c, 0, intent, 0);
 		AlarmManager alarmManager = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
 		
 		alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+		
+		return pendingIntent;
 	}
 
 	@Override

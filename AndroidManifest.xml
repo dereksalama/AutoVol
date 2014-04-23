@@ -69,9 +69,7 @@
             <!-- <meta-data android:name="default" android:value="@string/default_pipeline"/> -->
         </service>
         <service
-            android:name="com.autovol.ActivityRecognitionIntentService"
-            android:exported="false"
-            android:label="@string/app_name" >
+            android:name="com.autovol.ActivityRecognitionIntentService">
         </service>
 
         <receiver
@@ -98,7 +96,7 @@
         <activity
             android:name="com.autovol.UserActivity"
             android:label="@string/title_activity_user" >
-            <intent-filter>
+            <intent-filter android:label="@string/app_name">
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />

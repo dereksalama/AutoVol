@@ -81,7 +81,7 @@ private BroadcastReceiver receiver = new BroadcastReceiver() {
 		LocationRequest req = LocationRequest.create();
 		req.setInterval(1000 * 60 * 5); // TODO
 		req.setFastestInterval(1000 * 15);
-		req.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+		req.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 		
 		mLocClient.requestLocationUpdates(req, mLocPendingIntent);
 
