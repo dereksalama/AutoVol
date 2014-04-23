@@ -48,10 +48,10 @@ public class UserActivity extends Activity {
 				AppPrefs.setControlRinger(isChecked, UserActivity.this);
 				if (isChecked) {
 					//ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
-					CurrentStateListener.get().enable(funfManager, getApplicationContext());
+					CurrentStateListener.get().enable(funfManager, UserActivity.this);
 				} else {
 					//ClassifyAlarm.cancelAlarm(UserActivity.this);
-					CurrentStateListener.get().disable(funfManager, getApplicationContext());
+					CurrentStateListener.get().disable(funfManager, UserActivity.this);
 				}
 			}
 		});
@@ -112,8 +112,8 @@ public class UserActivity extends Activity {
 	    	Log.d("TestActivity", "onServiceConnected");
 	        funfManager = ((FunfManager.LocalBinder)service).getManager();
 
-	        if (AppPrefs.isControlRinger(getApplicationContext())) {
-		        CurrentStateListener.get().enable(funfManager, getApplicationContext());
+	        if (AppPrefs.isControlRinger(UserActivity.this)) {
+		        CurrentStateListener.get().enable(funfManager, UserActivity.this);
 	        }
 	        enableBox.setEnabled(true);
 	    }

@@ -11,6 +11,7 @@ import android.util.Log;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
 import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.ActivityRecognitionClient;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.gson.JsonObject;
@@ -116,6 +117,15 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
     protected void onEnable() {
 		super.onEnable();
 		Log.d("ActivityProbe", "enabled");
+		int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getContext());
+        // If Google Play services is available
+        if (ConnectionResult.SUCCESS != resultCode) {
+            // In debug mode, log the status
+            Log.d("ActivityProbe",
+                    "Google Play services not available!!!");
+            return;
+        }
+		
         /*
          * Instantiate a new activity recognition client. Since the
          * parent Activity implements the connection listener and
@@ -151,32 +161,6 @@ public class ActivityProbe extends Base implements ConnectionCallbacks, OnConnec
 		}
 
     }
-
-    /**
-     * Called when the probe switches from the enabled state to active
-     * running state. This should be used to send any data broadcasts, but
-     * must return quickly. If you have any long running processes they
-     * should be started on a separate thread created by this method, or
-     * should be divided into short runnables that are posted to this
-     * threads looper one at a time, to allow for the probe to change state.
-     */
-	@Override
-    protected void onStart() {
-		super.onStart();
-
-
-    }
-
-    /**
-     * Called with the probe switches from the running state to the enabled
-     * state. This method should be used to stop any running threads
-     * emitting data, or remove a runnable that has been posted to this
-     * thread's looper. Any passive listeners should continue running.
-     */
-	@Override
-    protected void onStop() {
-		super.onStop();
-	}
 
     /**
      * Called with the probe switches from the enabled state to the disabled
