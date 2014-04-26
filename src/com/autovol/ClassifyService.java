@@ -25,13 +25,6 @@ public class ClassifyService extends IntentService {
 	
 	public static final String EVENT_CLASSIFY_RESULT = "classify_result";
 	
-	private static final String KNN_URL = "/AutoVolWeb/KnnClassifyServlet";
-	private static final String LOC_KNN_URL = "/AutoVolWeb/LocKnnClassifyServlet";
-	private static final String AVG_KNN_URL = "/AutoVolWeb/AvgKnnClassifyServlet";
-	private static final String AVG_LOC_KNN_URL = "/AutoVolWeb/AvgLocKnnClassifyServlet";
-	private static final String CLUSTER_LOC_KNN_URL = "/AutoVolWeb/ClusterLocKnnClassifyServlet";
-	private static final String PROB_LOC_KNN_URL = "/AutoVolWeb/EmLocKnnClassifyServlet";
-	
 	public static final int NUM_VECTORS_TO_AVG = 8;
 	
 	public ClassifyService() {
@@ -40,9 +33,14 @@ public class ClassifyService extends IntentService {
 
 	public static final String FILE_NAME = "classify_result_file";
 	
-	private void saveResult(String result) {
+	public static String getFileName(String type) {
+		return FILE_NAME + "_" + type;
+	}
+	
+	private void saveResult(ClassifyType type, String result) {
 		try {
-			OutputStream output = new BufferedOutputStream(openFileOutput(FILE_NAME, 
+			String filename = getFileName(type.toString());
+			OutputStream output = new BufferedOutputStream(openFileOutput(filename, 
 					Context.MODE_APPEND));
 			output.write(result.getBytes());
 			output.close();
@@ -53,19 +51,18 @@ public class ClassifyService extends IntentService {
 		}
 	}
 	
-	private String constructUrl(String servlet, String target) {
-    	String reqUrl = AppPrefs.getBaseUrl(this) + servlet + "?" + 
-    			"target=" + target +
-    			"&user=" + AppPrefs.getAccountHash(this);
-    	return reqUrl;
-	}
+	
 
-	private void doRequest(String reqUrl, String type) {
+	private void doRequest(ClassifyType type) {
 		String time = new SimpleDateFormat("dd HH:mm", Locale.US).format(new Date());
 
 		HttpURLConnection urlConnection = null;
 		try {
-			URL url = new URL(reqUrl);
+			String urlStr = type.constructUrl(this);
+			if (urlStr == null) {
+				return;
+			}
+			URL url = new URL(urlStr);
 			urlConnection = (HttpURLConnection) url.openConnection();
 			InputStream in = new BufferedInputStream(urlConnection.getInputStream());
 			BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, "UTF-8")); 
@@ -75,7 +72,7 @@ public class ClassifyService extends IntentService {
 			while ((inputStr = streamReader.readLine()) != null)
 				responseStrBuilder.append(inputStr);
 
-			saveResult(time + "(" + type + "): " + responseStrBuilder.toString() + "\n");
+			saveResult(type, time + ": " + responseStrBuilder.toString() + "\n");
 
 			/*
 			Gson gson = new Gson();
@@ -136,33 +133,8 @@ public class ClassifyService extends IntentService {
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		Log.d("ClassifyService", "intent recieved");
-		String singleTarget = CurrentStateListener.get().currentStateJson();
-		if (singleTarget == null) {
-			Log.d("ClassifyService", "no data");
-			return;
+		for (ClassifyType type : ClassifyType.values()) {
+			doRequest(type);
 		}
-		String knnReqUrl = constructUrl(KNN_URL, singleTarget);
-		doRequest(knnReqUrl, "reg");
-		
-		String locKnnReqUrl = constructUrl(LOC_KNN_URL, singleTarget);
-		doRequest(locKnnReqUrl, "loc");
-		
-		String probLocKnnReqUrl = constructUrl(PROB_LOC_KNN_URL, singleTarget);
-		doRequest(probLocKnnReqUrl, "prob_loc");
-		
-		
-		String targetList = CurrentStateListener.get().recentStatesJson(NUM_VECTORS_TO_AVG);
-		if (targetList == null) {
-			Log.d("ClassifyService", "not enough states");
-			return;
-		}
-		String avgKnnReqUrl = constructUrl(AVG_KNN_URL, targetList);
-		doRequest(avgKnnReqUrl, "avg");
-		
-		String avgLocKnnReqUrl = constructUrl(AVG_LOC_KNN_URL, targetList);
-		doRequest(avgLocKnnReqUrl, "avg_loc");
-		
-		String clusterLocKnnReqUrl = constructUrl(CLUSTER_LOC_KNN_URL, targetList);
-		doRequest(clusterLocKnnReqUrl, "cluster_loc");
 	}
 }

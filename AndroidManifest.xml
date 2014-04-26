@@ -61,15 +61,13 @@
         <activity
             android:name="com.autovol.ResultsActivity"
             android:label="@string/app_name" >
-            
         </activity>
 
         <service android:name="edu.mit.media.funf.FunfManager" >
 
             <!-- <meta-data android:name="default" android:value="@string/default_pipeline"/> -->
         </service>
-        <service
-            android:name="com.autovol.ActivityRecognitionIntentService">
+        <service android:name="com.autovol.ActivityRecognitionIntentService" >
         </service>
 
         <receiver
@@ -89,18 +87,25 @@
         </service>
         <service android:name="com.autovol.LocationService" >
         </service>
-        
-        <receiver android:name="com.autovol.ClassifyAlarm"></receiver>
-        <service android:name="com.autovol.ClassifyService"></service>
+
+        <receiver android:name="com.autovol.ClassifyAlarm" >
+        </receiver>
+
+        <service android:name="com.autovol.ClassifyService" >
+        </service>
 
         <activity
             android:name="com.autovol.UserActivity"
             android:label="@string/title_activity_user" >
-            <intent-filter android:label="@string/app_name">
+            <intent-filter android:label="@string/app_name" >
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name="com.autovol.ResultsFragmentActivity"
+            android:label="@string/title_activity_results_fragment" >
         </activity>
     </application>
 
