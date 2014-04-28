@@ -86,7 +86,8 @@ public class UserActivity extends Activity {
 			startActivity(intent);
 			return true;
 		} else if (id == R.id.action_open_results) {
-			Intent intent = new Intent(this, ResultsActivity.class);
+			//Intent intent = new Intent(this, ResultsActivity.class);
+			Intent intent = new Intent(this, ResultsFragmentActivity.class);
 			startActivity(intent);
 			return true;
 		}

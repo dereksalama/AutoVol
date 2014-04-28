@@ -25,7 +25,8 @@ public class TestActivity extends Activity {
 
 	private static int GET_ACCT_REQUEST_CODE = 1;
 	
-	private TextView knnReg, knnLoc, knnAvg, knnAvgLoc, knnClusterLoc, knnProbLoc;
+	private TextView knnReg, knnLoc, knnAvg, knnAvgLoc, knnClusterLoc, knnProbLoc,
+		rf;
 	private Button classifyButton, archiveButton, uploadButton;
 	
 	private BroadcastReceiver classifyReceiver = new BroadcastReceiver() {
@@ -33,19 +34,33 @@ public class TestActivity extends Activity {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			String jsonStr = intent.getStringExtra("json");
-			String type = intent.getStringExtra("type");
-			if (type.equalsIgnoreCase("reg")) {
+			ClassifyType type = (ClassifyType) intent.getSerializableExtra("type");
+			switch (type) {
+			case KNN:
 				knnReg.setText(type + ": " + jsonStr);
-			} else if (type.equalsIgnoreCase("avg")) {
-				knnAvg.setText(type + ": " +jsonStr);
-			} else if (type.equalsIgnoreCase("loc")) {
+				break;
+			case LOC_KNN:
 				knnLoc.setText(type + ": " +jsonStr);
-			} else if (type.equalsIgnoreCase("avg_loc")){
+				break;
+			case AVG_KNN:
+				knnAvg.setText(type + ": " +jsonStr);
+				break;
+			case AVG_LOC_KNN:
 				knnAvgLoc.setText(type + ": " +jsonStr);
-			} else if (type.equalsIgnoreCase("cluster_loc")){
+				break;
+			case CLUSTER_KNN:
 				knnClusterLoc.setText(type + ": " +jsonStr);
-			} else if (type.equalsIgnoreCase("prob_loc")){
+				break;
+			case PROB_LOC_KNN:
 				knnProbLoc.setText(type + ": " +jsonStr);
+				break;
+			case RF:
+				rf.setText(type + ": " +jsonStr);
+				break;
+			//case PROB_LOC_RF:
+				//break;
+			default:
+				break;
 			}
 
 			Toast.makeText(TestActivity.this, type + " complete",
@@ -62,7 +77,7 @@ public class TestActivity extends Activity {
 		classifyButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				remoteClassifyGM();
+				remoteClassify();
 			}
 		});
 		archiveButton = (Button) findViewById(R.id.archive_button);
@@ -91,6 +106,7 @@ public class TestActivity extends Activity {
 		knnAvgLoc = (TextView) findViewById(R.id.knn_avg_loc);
 		knnClusterLoc = (TextView) findViewById(R.id.knn_cluster_loc);
 		knnProbLoc = (TextView) findViewById(R.id.knn_prob_loc);
+		rf = (TextView) findViewById(R.id.rf);
 	}
 	
 	@Override
@@ -151,7 +167,7 @@ public class TestActivity extends Activity {
 		 
 	}
     
-    private void remoteClassifyGM() {
+    private void remoteClassify() {
     	if (!CurrentStateListener.get().dataIsReady()) {
     		Toast.makeText(this, "Data not ready yet", Toast.LENGTH_SHORT).show();
     		return;
@@ -159,54 +175,5 @@ public class TestActivity extends Activity {
     	
     	Intent intent = new Intent(this, ClassifyService.class);
     	startService(intent);
-    	
-    	/*
-    	String reqUrl = AppPrefs.getBaseUrl(this) + GM_URL + "?" + "target=" + CurrentStateListener.get().currentStateJson() + 
-    			"&user=" + AppPrefs.getAccountHash(this);
-    	
-    	new AsyncTask<String, Void, String>() {
-
-    		@Override
-    		protected String doInBackground(String... urls) {
-    			HttpURLConnection urlConnection = null;
-    			try {
-    				URL url = new URL(urls[0]);
-    				urlConnection = (HttpURLConnection) url.openConnection();
-    				InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-    				BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, "UTF-8")); 
-    				StringBuilder responseStrBuilder = new StringBuilder();
-
-    				String inputStr;
-    				while ((inputStr = streamReader.readLine()) != null)
-    					responseStrBuilder.append(inputStr);
-
-    				return responseStrBuilder.toString();
-    			} catch (MalformedURLException e) {
-    				e.printStackTrace();
-    			} catch (IOException e) {
-    				e.printStackTrace();
-    			} finally {
-    				if (urlConnection != null)
-    					urlConnection.disconnect();
-    			}
-
-    			return null;
-    		}
-
-    		@Override
-    		protected void onPostExecute(String result) {
-    			if (result != null) {
-    				Gson gson = new Gson();
-    				JsonElement jelem = gson.fromJson(result, JsonElement.class);
-    				JsonObject json = jelem.getAsJsonObject();
-    				gmLabel.setText(json.get("label").getAsString());
-    				gmLabelProb.setText("" + json.get("prob_label").getAsDouble());
-    				gmClusterProb.setText("" + json.get("prob_cluster").getAsDouble());
-    				Toast.makeText(TestActivity.this, "Classification Complete: " + json, Toast.LENGTH_SHORT).show();
-    			}
-    		}
-
-    	}.execute(reqUrl);
-    	*/
     }
 }
