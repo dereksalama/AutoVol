@@ -26,7 +26,7 @@ public class UserActivity extends Activity {
 	private FunfManager funfManager;
 
 
-	private CheckBox enableBox;
+	private CheckBox enableBox, classifyBox;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -39,13 +39,14 @@ public class UserActivity extends Activity {
 	    }
 	    
 	    enableBox = (CheckBox) findViewById(R.id.checkbox_enable);
-	    enableBox.setChecked(AppPrefs.isControlRinger(this)); //TODO add to app prefs when ringer
+	    enableBox.setChecked(AppPrefs.isEnableCollection(this)); 
 	    enableBox.setEnabled(false);
 	    enableBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				AppPrefs.setControlRinger(isChecked, UserActivity.this);
+				AppPrefs.setEnableCollection(isChecked, UserActivity.this);
+				classifyBox.setEnabled(isChecked);
 				if (isChecked) {
 					//ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
 					CurrentStateListener.get().enable(funfManager, UserActivity.this);
@@ -55,6 +56,24 @@ public class UserActivity extends Activity {
 				}
 			}
 		});
+	    
+	    classifyBox = (CheckBox) findViewById(R.id.checkbox_classify);
+	    classifyBox.setChecked(AppPrefs.isEnableClassify(this)); 
+	    classifyBox.setEnabled(AppPrefs.isEnableCollection(this));
+	    classifyBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				AppPrefs.setEnableClassify(isChecked, UserActivity.this);
+				if (isChecked) {
+					ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
+				} else {
+					ClassifyAlarm.cancelAlarm(UserActivity.this);
+				}
+			}
+		});
+	    
+	    
 	    
 	    // Clear some settings
 	    AppPrefs.setLastCluster(this, -1);
@@ -113,10 +132,15 @@ public class UserActivity extends Activity {
 	    	Log.d("TestActivity", "onServiceConnected");
 	        funfManager = ((FunfManager.LocalBinder)service).getManager();
 
-	        if (AppPrefs.isControlRinger(UserActivity.this)) {
+	        if (AppPrefs.isEnableCollection(UserActivity.this)) {
 		        CurrentStateListener.get().enable(funfManager, UserActivity.this);
+		        
+		        if (AppPrefs.isEnableClassify(UserActivity.this)) {
+		        	ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
+		        }
 	        }
 	        enableBox.setEnabled(true);
+	        
 	    }
 	    
 	    @Override

@@ -26,7 +26,7 @@ public class TestActivity extends Activity {
 	private static int GET_ACCT_REQUEST_CODE = 1;
 	
 	private TextView knnReg, knnLoc, knnAvg, knnAvgLoc, knnClusterLoc, knnProbLoc,
-		rf;
+		rf, probLocRf;
 	private Button classifyButton, archiveButton, uploadButton;
 	
 	private BroadcastReceiver classifyReceiver = new BroadcastReceiver() {
@@ -39,26 +39,29 @@ public class TestActivity extends Activity {
 			case KNN:
 				knnReg.setText(type + ": " + jsonStr);
 				break;
-			case LOC_KNN:
-				knnLoc.setText(type + ": " +jsonStr);
-				break;
+//			case LOC_KNN:
+//				knnLoc.setText(type + ": " +jsonStr);
+//				break;
 			case AVG_KNN:
 				knnAvg.setText(type + ": " +jsonStr);
 				break;
-			case AVG_LOC_KNN:
-				knnAvgLoc.setText(type + ": " +jsonStr);
-				break;
-			case CLUSTER_KNN:
-				knnClusterLoc.setText(type + ": " +jsonStr);
-				break;
+//			case AVG_LOC_KNN:
+//				knnAvgLoc.setText(type + ": " +jsonStr);
+//				break;
+//			case CLUSTER_KNN:
+//				knnClusterLoc.setText(type + ": " +jsonStr);
+//				break;
 			case PROB_LOC_KNN:
 				knnProbLoc.setText(type + ": " +jsonStr);
 				break;
 			case RF:
 				rf.setText(type + ": " +jsonStr);
 				break;
-			//case PROB_LOC_RF:
-				//break;
+			case PROB_LOC_RF:
+				probLocRf.setText(type + ": " +jsonStr);
+				break;
+			case AVG_RF:
+				knnLoc.setText(type + ": " + jsonStr);
 			default:
 				break;
 			}
@@ -107,6 +110,8 @@ public class TestActivity extends Activity {
 		knnClusterLoc = (TextView) findViewById(R.id.knn_cluster_loc);
 		knnProbLoc = (TextView) findViewById(R.id.knn_prob_loc);
 		rf = (TextView) findViewById(R.id.rf);
+		probLocRf = (TextView) findViewById(R.id.rf_prob_loc);
+		
 	}
 	
 	@Override

@@ -16,6 +16,8 @@ public class AppPrefs {
 	private static final String USER_ACCT_DNE = "no_acct";
 	private static final String CONTROL_RINGER = "set_ringer";
 	private static final String LAST_CLUSTER = "last_cluster";
+	private static final String ENABLE_COLLECTION = "enable_collection";
+	private static final String ENABLE_CLASSIFY = "enable_classify";
 	
 	// Local host
 	private static final String LOCAL_BASE_URL = "http://10.0.1.17:8080";
@@ -72,6 +74,30 @@ public class AppPrefs {
 		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
 		SharedPreferences.Editor edit = sp.edit();
 		edit.putBoolean(CONTROL_RINGER, controlRinger);
+		edit.commit();
+	}
+	
+	public static boolean isEnableCollection(Context c) {
+		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
+		return sp.getBoolean(ENABLE_COLLECTION, false);
+	}
+	
+	public static void setEnableCollection(boolean enable, Context c) {
+		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences.Editor edit = sp.edit();
+		edit.putBoolean(ENABLE_COLLECTION, enable);
+		edit.commit();
+	}
+	
+	public static boolean isEnableClassify(Context c) {
+		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
+		return sp.getBoolean(ENABLE_CLASSIFY, false);
+	}
+	
+	public static void setEnableClassify(boolean enable, Context c) {
+		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences.Editor edit = sp.edit();
+		edit.putBoolean(ENABLE_CLASSIFY, enable);
 		edit.commit();
 	}
 	

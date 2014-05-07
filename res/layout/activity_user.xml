@@ -27,4 +27,12 @@
         android:text="Welcome to AutoVol!"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
+    <CheckBox
+        android:id="@+id/checkbox_classify"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/checkbox_enable"
+        android:layout_centerHorizontal="true"
+        android:text="classify" />
+
 </RelativeLayout>
