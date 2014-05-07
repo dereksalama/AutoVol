@@ -12,26 +12,15 @@ public class UploadAlarm extends BroadcastReceiver {
 	
 	private static final int HOUR_IN_MILLIS = 60 * 60 * 1000;
 	private static final int DAY_IN_MILLIS = 24 * HOUR_IN_MILLIS;
-	private static final int HALF_DAY_MILLIS = DAY_IN_MILLIS / 2;
-	
-	public static PendingIntent scheduleDailyUpload(Context c) {
-		return schedule(c, System.currentTimeMillis() + HALF_DAY_MILLIS);
-	}
-	
-	private void postpone(Context c) {
-		// make sure we don't go to next day
-		long timeToTrigger = System.currentTimeMillis() + HOUR_IN_MILLIS;
-		schedule(c, timeToTrigger);
-
-	}
-	
-	private static PendingIntent schedule(Context c, long triggerAtMillis) {
+	private static final int QUARTER_DAY_MILLIS = DAY_IN_MILLIS / 4;
+		
+	public static PendingIntent schedule(Context c) {
 		Intent intent = new Intent(c, UploadAlarm.class);
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(c, 0, intent, 0);
 		AlarmManager alarmManager = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
 		
-		alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
-		
+		alarmManager.setInexactRepeating(AlarmManager.RTC, QUARTER_DAY_MILLIS, QUARTER_DAY_MILLIS, pendingIntent);
+
 		return pendingIntent;
 	}
 
@@ -42,10 +31,7 @@ public class UploadAlarm extends BroadcastReceiver {
 
 		if (mWifi.isConnected()) {
 		    upload(context);
-		} else {
-			postpone(context);
 		}
-
 	}
 	
 	private void upload(Context c) {

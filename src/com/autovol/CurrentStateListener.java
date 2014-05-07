@@ -49,7 +49,7 @@ public class CurrentStateListener implements DataListener {
 	private MyLocationProbe myLocProbe;
 	private ActivityProbe activityProbe;
 	private MyLightSensorProbe lightProbe;
-	private WifiProbe wifiProbe;
+	//private WifiProbe wifiProbe;
 	private ProximitySensorProbe proximityProbe;
 	private BatteryProbe batteryProbe;
 	private RingerVolumeProbe ringerProbe;
@@ -64,7 +64,7 @@ public class CurrentStateListener implements DataListener {
 	
 	
 	private static final String[] TYPES_NEEDING_INIT = { "lat" , "lon",
-		"loc_provider", "activity_confidence", "light", "distance", "wifi_count", "charging",
+		"loc_provider", "activity_confidence", "light", "distance", "charging",
 		"activity_type", "audio_mag", "screen_on", "screen_last_on", "ringer"};
 
 	private Set<String> typesWaitingInit;
@@ -130,7 +130,7 @@ public class CurrentStateListener implements DataListener {
 	        //audioProbe = gson.fromJson(new JsonObject(), AudioProbe.class);
 	        //bluetoothProbe = gson.fromJson(new JsonObject(), BluetoothProbe.class);
 	        lightProbe = gson.fromJson(new JsonObject(), MyLightSensorProbe.class);
-	        wifiProbe = gson.fromJson(new JsonObject(), WifiProbe.class);
+	        //wifiProbe = gson.fromJson(new JsonObject(), WifiProbe.class);
 	        proximityProbe = gson.fromJson(new JsonObject(),ProximitySensorProbe.class);
 	        batteryProbe = gson.fromJson(new JsonObject(), BatteryProbe.class);
 	        ringerProbe = gson.fromJson(new JsonObject(), RingerVolumeProbe.class);
@@ -151,7 +151,7 @@ public class CurrentStateListener implements DataListener {
 	        myLocProbe.registerPassiveListener(this);
 	        //audioProbe.registerPassiveListener(this);
 	        
-	        funfManager.requestData(this, wifiProbe.getConfig());
+	        //funfManager.requestData(this, wifiProbe.getConfig());
 	        funfManager.requestData(this, proximityProbe.getConfig());
 	        funfManager.requestData(this, batteryProbe.getConfig());
 
@@ -159,7 +159,7 @@ public class CurrentStateListener implements DataListener {
 	        ringerProbe.registerPassiveListener(this);
 	        
 	        archiveIntent = ArchiveAlarm.scheduleRepeatedArchive(c);
-	        uploadIntent = UploadAlarm.scheduleDailyUpload(c);
+	        uploadIntent = UploadAlarm.schedule(c);
 	        enabled = true;
 		}
 	}
