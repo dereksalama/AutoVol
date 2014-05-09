@@ -16,10 +16,17 @@ import java.util.Date;
 import java.util.Locale;
 
 import android.app.IntentService;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 public class ClassifyService extends IntentService {
 	
@@ -51,7 +58,89 @@ public class ClassifyService extends IntentService {
 		}
 	}
 	
+	private static final String[] RINGER_MODES = {"silent", "vibrate", "normal"};
 	
+	private static final String MAIN_CLASSIFY_SERVLET_URL = "/AutoVolWeb/MainClassifyServlet";
+	
+	private void doMainRequest() {
+		String target = CurrentStateListener.get().recentStatesJson(8) ;
+		if (target == null) {
+			return;
+		}
+		String urlStr = AppPrefs.getBaseUrl(this) + MAIN_CLASSIFY_SERVLET_URL + "?" + 
+				"target=" + target +
+				"&user=" + AppPrefs.getAccountHash(this);
+
+		HttpURLConnection urlConnection = null;
+		try {
+			URL url = new URL(urlStr);
+			urlConnection = (HttpURLConnection) url.openConnection();
+			InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+			BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, "UTF-8")); 
+			StringBuilder responseStrBuilder = new StringBuilder();
+
+			String inputStr;
+			while ((inputStr = streamReader.readLine()) != null)
+				responseStrBuilder.append(inputStr);
+
+			if (AppPrefs.isControlRinger(this) && !AppPrefs.isTempDisable(this)) {
+				Gson gson = new Gson();
+				JsonElement jelem = gson.fromJson(responseStrBuilder.toString(), JsonElement.class);
+				JsonObject json = jelem.getAsJsonObject();
+				
+				String result = json.get("result").getAsString();
+				if (result.equals("err")) {
+					Log.d("ClassifyService", "error result for main");
+					return;
+				}
+				
+				
+				AudioManager audioMan = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+				int ringerMode = audioMan.getRingerMode();
+				String currentRinger = RINGER_MODES[ringerMode];
+				
+				if (!currentRinger.equalsIgnoreCase(result)) {
+
+					AppPrefs.setAutovolSettingVolume(true, this);
+					if (result.equals("silent")) {
+						audioMan.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+					} else if (result.equals("vibrate")) {
+						audioMan.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
+					} else {
+						audioMan.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+						int defaultVol = AppPrefs.getDefaultRingerVolume(this);
+						audioMan.setStreamVolume(AudioManager.STREAM_RING, defaultVol, 0);
+					}
+					AppPrefs.setAutovolSettingVolume(false, this);
+
+					SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.US);
+
+					// Let the user know
+
+					Notification.Builder builder = new Notification.Builder(this)
+					.setSmallIcon(R.drawable.ic_launcher)
+					.setContentTitle("AutoVol: " + result)
+					.setVibrate(new long[] {0, 10})
+					.setContentText("Set at " + sdf.format(new Date()));
+
+					NotificationManager notificationManager = 
+							(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+					notificationManager.notify(0, builder.build());
+
+				}
+				
+			}
+
+			Log.d("ClassifyService", "Main complete");
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (urlConnection != null)
+				urlConnection.disconnect();
+		}
+	}
 
 	private void doRequest(ClassifyType type) {
 		String time = new SimpleDateFormat("dd HH:mm", Locale.US).format(new Date());
@@ -74,44 +163,6 @@ public class ClassifyService extends IntentService {
 
 			saveResult(type, time + ": " + responseStrBuilder.toString() + "\n");
 
-			/*
-			Gson gson = new Gson();
-			JsonElement jelem = gson.fromJson(responseStrBuilder.toString(), JsonElement.class);
-			JsonObject json = jelem.getAsJsonObject();
-			
-			Integer cluster = json.get("cluster").getAsInt();
-			if (cluster != AppPrefs.getLastCluster(this)) {
-				AppPrefs.setLastCluster(this, cluster);
-
-				if (AppPrefs.isControlRinger(this)) {
-					AudioManager audioMan = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-					String label = json.get("label").getAsString();
-					if (label.equals("silent")) {
-						audioMan.setRingerMode(AudioManager.RINGER_MODE_SILENT);
-					} else if (label.equals("vibrate")) {
-						audioMan.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
-					} else {
-						audioMan.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
-					}
-
-					
-					SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.US);
-
-					// Let the user know
-					
-					Notification.Builder builder = new Notification.Builder(this)
-					.setSmallIcon(R.drawable.ic_launcher)
-					.setContentTitle("AutoVol: " + label)
-					.setContentText("Set at " + sdf.format(new Date()));
-
-					NotificationManager notificationManager = 
-							(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-					notificationManager.notify(0, builder.build());
-					
-				}
-			}
-			*/
-
 			Intent broadcastIntent = new Intent(EVENT_CLASSIFY_RESULT);
 			broadcastIntent.putExtra("json", responseStrBuilder.toString());
 			broadcastIntent.putExtra("type", type);
@@ -133,8 +184,11 @@ public class ClassifyService extends IntentService {
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		Log.d("ClassifyService", "intent recieved");
-		for (ClassifyType type : ClassifyType.values()) {
-			doRequest(type);
+		if (AppPrefs.isEnableClassify(this)) {
+			for (ClassifyType type : ClassifyType.values()) {
+				doRequest(type);
+			}
+			doMainRequest();
 		}
 	}
 }

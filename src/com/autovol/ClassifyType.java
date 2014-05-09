@@ -6,8 +6,8 @@ public enum ClassifyType {
 	KNN ("/AutoVolWeb/KnnClassifyServlet", 1), 
 	//LOC_KNN ("/AutoVolWeb/LocKnnClassifyServlet", 1),
 	AVG_KNN ("/AutoVolWeb/AvgKnnClassifyServlet", 8), 
-	//AVG_LOC_KNN ("/AutoVolWeb/AvgLocKnnClassifyServlet", 8), 
-	//CLUSTER_KNN ("/AutoVolWeb/ClusterLocKnnClassifyServlet", 8), 
+	AVG_LOC_KNN ("/AutoVolWeb/AvgLocKnnClassifyServlet", 8), 
+	CLUSTER_KNN ("/AutoVolWeb/ClusterLocKnnClassifyServlet", 8), 
 	PROB_LOC_KNN ("/AutoVolWeb/EmLocKnnClassifyServlet", 1), 
 	RF ("/AutoVolWeb/RfClassifyServlet", 1),
 	AVG_RF("/AutoVolWeb/AvgRfClassifyServlet", 8),
@@ -39,4 +39,7 @@ public enum ClassifyType {
 			 return CurrentStateListener.get().recentStatesJson(numStates);
 		}
 	}
+	
+	public static ClassifyType MAIN = RF;
+	public static String MAIN_RESULT_KEY = "rf";
 }

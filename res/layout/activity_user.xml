@@ -35,4 +35,21 @@
         android:layout_centerHorizontal="true"
         android:text="classify" />
 
+    <CheckBox
+        android:id="@+id/checkbox_temp_disable"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/checkbox_classify"
+        android:layout_below="@+id/checkbox_classify"
+        android:text="Temp Disable" />
+
+    <Button
+        android:id="@+id/button_save_default"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/checkbox_temp_disable"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="22dp"
+        android:text="Save Default Volume" />
+
 </RelativeLayout>

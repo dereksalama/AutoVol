@@ -1,5 +1,8 @@
 package com.autovol;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -25,6 +28,24 @@ public class RingerVolumeProbe extends Base implements PassiveProbe {
 			data.addProperty(RINGER_MODE, ringerMode);
 			sendData(data);
 			
+			if (AppPrefs.isControlRinger(context) && !AppPrefs.isTempDisable(context)
+					&& !AppPrefs.isAutovolSettingVolume(context)) {
+				Intent bIntent = new Intent(context, ResumeControlBroadcast.class);
+				PendingIntent pIntent = PendingIntent.getBroadcast(context, 0, bIntent, 0);
+		
+				Notification.Builder builder = new Notification.Builder(context)
+					.setSmallIcon(R.drawable.ic_launcher)
+					.setContentTitle("Setting Overrode!")
+					.setVibrate(new long[] {0, 10})
+					.setAutoCancel(true)
+					.setContentIntent(pIntent)
+					.setContentText("touch to re-enable");
+				
+				NotificationManager notificationManager = 
+						(NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+				notificationManager.notify(0, builder.build());
+				AppPrefs.setTempDisable(true, context);
+			}
 		}
 	};
 	

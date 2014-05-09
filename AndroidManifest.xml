@@ -76,6 +76,8 @@
         </receiver>
         <receiver android:name="com.autovol.UploadAlarm" >
         </receiver>
+        <receiver android:name="com.autovol.ResumeControlBroadcast" >
+        </receiver>
 
         <service android:name="com.autovol.UploadService" >
         </service>

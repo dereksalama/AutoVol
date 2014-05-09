@@ -5,13 +5,18 @@ import java.io.UnsupportedEncodingException;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -26,7 +31,8 @@ public class UserActivity extends Activity {
 	private FunfManager funfManager;
 
 
-	private CheckBox enableBox, classifyBox;
+	private CheckBox enableBox, classifyBox, tempDisableBox;
+	private Button saveDefaultButton;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -73,12 +79,33 @@ public class UserActivity extends Activity {
 			}
 		});
 	    
+	    tempDisableBox = (CheckBox) findViewById(R.id.checkbox_temp_disable);
+	    tempDisableBox.setChecked(AppPrefs.isTempDisable(this)); 
+	    tempDisableBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				AppPrefs.setTempDisable(isChecked, UserActivity.this);
+			}
+		});
 	    
-	    
-	    // Clear some settings
-	    AppPrefs.setLastCluster(this, -1);
+	    saveDefaultButton = (Button) findViewById(R.id.button_save_default);
+	    saveDefaultButton.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				AudioManager audioMan = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+				int newDefault = audioMan.getStreamVolume(AudioManager.STREAM_RING);
+				AppPrefs.setDefaultRingerVolume(UserActivity.this, newDefault);
+			}
+		});
 	}
 	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		tempDisableBox.setChecked(AppPrefs.isTempDisable(this)); 
+	}
 	@Override
 	protected void onDestroy() {
 		CurrentStateListener.get().disable(funfManager, getApplicationContext());
