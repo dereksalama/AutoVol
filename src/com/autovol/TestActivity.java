@@ -179,6 +179,7 @@ public class TestActivity extends Activity {
     	}
     	
     	Intent intent = new Intent(this, ClassifyService.class);
+    	intent.putExtra("test", true);
     	startService(intent);
     }
 }

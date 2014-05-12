@@ -15,7 +15,7 @@
         android:layout_below="@+id/user_welcome_message"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="87dp"
-        android:text="Enable" />
+        android:text="Enable Collection" />
 
     <TextView
         android:id="@+id/user_welcome_message"
@@ -33,7 +33,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/checkbox_enable"
         android:layout_centerHorizontal="true"
-        android:text="classify" />
+        android:text="Enable Control" />
 
     <CheckBox
         android:id="@+id/checkbox_temp_disable"

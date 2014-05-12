@@ -11,7 +11,8 @@ public enum ClassifyType {
 	PROB_LOC_KNN ("/AutoVolWeb/EmLocKnnClassifyServlet", 1), 
 	RF ("/AutoVolWeb/RfClassifyServlet", 1),
 	AVG_RF("/AutoVolWeb/AvgRfClassifyServlet", 8),
-	PROB_LOC_RF("/AutoVolWeb/EmLocRfClassifyServlet", 1);
+	PROB_LOC_RF("/AutoVolWeb/EmLocRfClassifyServlet", 1),
+	MAIN("/AutoVolWeb/MainClassifyServlet", 8);
 	
 	private final String reqUrl;
 	private final int numStates;
@@ -39,7 +40,4 @@ public enum ClassifyType {
 			 return CurrentStateListener.get().recentStatesJson(numStates);
 		}
 	}
-	
-	public static ClassifyType MAIN = RF;
-	public static String MAIN_RESULT_KEY = "rf";
 }
