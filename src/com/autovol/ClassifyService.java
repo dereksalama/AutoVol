@@ -32,7 +32,7 @@ public class ClassifyService extends IntentService {
 	
 	public static final String EVENT_CLASSIFY_RESULT = "classify_result";
 	
-	public static final int NUM_VECTORS_TO_AVG = 8;
+	public static final int NUM_VECTORS_TO_AVG = 4;
 	
 	public ClassifyService() {
 		super("ClassifyService");

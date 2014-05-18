@@ -36,32 +36,36 @@ public class TestActivity extends Activity {
 			String jsonStr = intent.getStringExtra("json");
 			ClassifyType type = (ClassifyType) intent.getSerializableExtra("type");
 			switch (type) {
-			case KNN:
-				knnReg.setText(type + ": " + jsonStr);
-				break;
-//			case LOC_KNN:
-//				knnLoc.setText(type + ": " +jsonStr);
+//			case KNN:
+//				knnReg.setText(type + ": " + jsonStr);
 //				break;
-			case AVG_KNN:
-				knnAvg.setText(type + ": " +jsonStr);
-				break;
-//			case AVG_LOC_KNN:
-//				knnAvgLoc.setText(type + ": " +jsonStr);
+////			case LOC_KNN:
+////				knnLoc.setText(type + ": " +jsonStr);
+////				break;
+//			case AVG_KNN:
+//				knnAvg.setText(type + ": " +jsonStr);
 //				break;
-			case CLUSTER_KNN:
-				knnClusterLoc.setText(type + ": " +jsonStr);
-				break;
-			case PROB_LOC_KNN:
-				knnProbLoc.setText(type + ": " +jsonStr);
-				break;
-			case RF:
-				rf.setText(type + ": " +jsonStr);
-				break;
-			case PROB_LOC_RF:
-				probLocRf.setText(type + ": " +jsonStr);
-				break;
-			case AVG_RF:
+////			case AVG_LOC_KNN:
+////				knnAvgLoc.setText(type + ": " +jsonStr);
+////				break;
+//			case CLUSTER_KNN:
+//				knnClusterLoc.setText(type + ": " +jsonStr);
+//				break;
+//			case PROB_LOC_KNN:
+//				knnProbLoc.setText(type + ": " +jsonStr);
+//				break;
+//			case RF:
+//				rf.setText(type + ": " +jsonStr);
+//				break;
+//			case PROB_LOC_RF:
+//				probLocRf.setText(type + ": " +jsonStr);
+//				break;
+//			case AVG_RF:
+//				knnLoc.setText(type + ": " + jsonStr);
+//				break;
+			case MAIN:
 				knnLoc.setText(type + ": " + jsonStr);
+				break;
 			default:
 				break;
 			}

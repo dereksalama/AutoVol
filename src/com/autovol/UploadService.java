@@ -5,9 +5,11 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,72 +35,88 @@ public class UploadService extends IntentService {
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		Log.d("UploadService", "intent received");
+
+		try {
+			upload();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+			// retry once
+			try {
+				upload();
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+	}
+
+	private void upload() throws FileNotFoundException, MalformedURLException,
+			IOException, UnsupportedEncodingException {
+		CurrentStateListener.get().saveRecentObservations(this);
+		
 		HttpURLConnection conn = null;
 		FileInputStream fileInput = null;
 		DataOutputStream outputStream = null;
 
 		int bytesRead, bytesAvailable, bufferSize;
 		byte[] buffer;
-		try {
-			fileInput = openFileInput(CurrentStateListener.SAVED_FILE);
+		
+		
+		fileInput = openFileInput(CurrentStateListener.SAVED_FILE);
 
-			String fullUrl = AppPrefs.getBaseUrl(this) + UPLOAD_URL;
-			URL url = new URL(fullUrl);
-			conn = (HttpURLConnection) url.openConnection();
-			conn.setDoOutput(true);
-			conn.setChunkedStreamingMode(0);
-			conn.setRequestProperty("Connection", "Keep-Alive");
+		String fullUrl = AppPrefs.getBaseUrl(this) + UPLOAD_URL;
+		URL url = new URL(fullUrl);
+		conn = (HttpURLConnection) url.openConnection();
+		conn.setDoOutput(true);
+		conn.setChunkedStreamingMode(0);
+		conn.setRequestProperty("Connection", "Keep-Alive");
 
-			outputStream = new DataOutputStream(conn.getOutputStream());
+		outputStream = new DataOutputStream(conn.getOutputStream());
 
-			bytesAvailable = fileInput.available();
-			if (bytesAvailable == 0) {
-				Log.d("UploadService", "Nothing to upload");
-				return;
-			}
-			
-			// write account first
-			outputStream.writeChars(AppPrefs.getAccountHash(this) + "\n");
-			
-			
-			bufferSize = Math.min(bytesAvailable, MAX_BUFFER_SIZE);
-			buffer = new byte[bufferSize];
-
-			bytesRead = fileInput.read(buffer, 0, bufferSize);
-			while (bytesRead > 0) {
-				outputStream.write(buffer);
-				bytesAvailable = fileInput.available();
-				bufferSize = Math.min(bytesAvailable, MAX_BUFFER_SIZE);
-				bytesRead = fileInput.read(buffer, 0, bufferSize);
-			}
-			String closingBracket = "]"; // complete list
-			outputStream.write(closingBracket.getBytes());
-			int serverResponseCode = conn.getResponseCode();
-			fileInput.close();
-
-			if (serverResponseCode == HttpURLConnection.HTTP_ACCEPTED) {
-				Log.d("UploadService", "success, deleting");
-				File savedFile = getFileStreamPath(CurrentStateListener.SAVED_FILE);
-				savedFile.delete();
-			} else {
-				InputStream in = new BufferedInputStream(conn.getErrorStream());
-				BufferedReader errorReader = new BufferedReader(
-						new InputStreamReader(in, "UTF-8"));
-				StringBuilder responseStrBuilder = new StringBuilder();
-				String inputStr;
-				while ((inputStr = errorReader.readLine()) != null)
-					responseStrBuilder.append(inputStr);
-				
-				Log.d("UploadService", "err: " + responseStrBuilder.toString());
-			}
-
-			outputStream.flush();
-			outputStream.close();
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+		bytesAvailable = fileInput.available();
+		if (bytesAvailable == 0) {
+			Log.d("UploadService", "Nothing to upload");
+			return;
 		}
+		
+		// write account first
+		outputStream.writeChars(AppPrefs.getAccountHash(this) + "\n");
+		
+		
+		bufferSize = Math.min(bytesAvailable, MAX_BUFFER_SIZE);
+		buffer = new byte[bufferSize];
+
+		bytesRead = fileInput.read(buffer, 0, bufferSize);
+		while (bytesRead > 0) {
+			outputStream.write(buffer);
+			bytesAvailable = fileInput.available();
+			bufferSize = Math.min(bytesAvailable, MAX_BUFFER_SIZE);
+			bytesRead = fileInput.read(buffer, 0, bufferSize);
+		}
+		String closingBracket = "]"; // complete list
+		outputStream.write(closingBracket.getBytes());
+		int serverResponseCode = conn.getResponseCode();
+		fileInput.close();
+
+		if (serverResponseCode == HttpURLConnection.HTTP_ACCEPTED) {
+			Log.d("UploadService", "success, deleting");
+			File savedFile = getFileStreamPath(CurrentStateListener.SAVED_FILE);
+			savedFile.delete();
+		} else {
+			InputStream in = new BufferedInputStream(conn.getErrorStream());
+			BufferedReader errorReader = new BufferedReader(
+					new InputStreamReader(in, "UTF-8"));
+			StringBuilder responseStrBuilder = new StringBuilder();
+			String inputStr;
+			while ((inputStr = errorReader.readLine()) != null)
+				responseStrBuilder.append(inputStr);
+			
+			Log.d("UploadService", "err: " + responseStrBuilder.toString());
+		}
+
+		outputStream.flush();
+		outputStream.close();
 	}
 	
 }
