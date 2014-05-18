@@ -161,12 +161,12 @@ public class ClassifyService extends IntentService {
 	protected void onHandleIntent(Intent intent) {
 		Log.d("ClassifyService", "intent recieved");
 		boolean isTest = intent.getBooleanExtra("test", false);
-		if (AppPrefs.isEnableClassify(this)) {
-			if (isTest) {
-				for (ClassifyType type : ClassifyType.values()) {
-					doRequest(type);
-				}
-			} else {
+		if (isTest) {
+			for (ClassifyType type : ClassifyType.values()) {
+				doRequest(type);
+			}
+		} else {
+			if (AppPrefs.isControlRinger(this)) {
 				doRequest(ClassifyType.MAIN);
 			}
 		}

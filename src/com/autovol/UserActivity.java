@@ -4,14 +4,10 @@ import java.io.UnsupportedEncodingException;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,12 +19,10 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 
 import com.google.android.gms.common.AccountPicker;
 
-import edu.mit.media.funf.FunfManager;
-
 public class UserActivity extends Activity {
 	
 	private static int GET_ACCT_REQUEST_CODE = 1;
-	private FunfManager funfManager;
+	
 
 
 	private CheckBox enableBox, classifyBox, tempDisableBox;
@@ -38,39 +32,35 @@ public class UserActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_user);
 	    
-	    bindService(new Intent(this, FunfManager.class), funfManagerConn, BIND_AUTO_CREATE);
-	    
 	    if (AppPrefs.isFreshInstall(this)) {
 	    	chooseNewAccount();
 	    }
 	    
+	    Intent service = new Intent(this, DataCollectionService.class);
+	    startService(service);
+	    
 	    enableBox = (CheckBox) findViewById(R.id.checkbox_enable);
 	    enableBox.setChecked(AppPrefs.isEnableCollection(this)); 
-	    enableBox.setEnabled(false);
 	    enableBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 				AppPrefs.setEnableCollection(isChecked, UserActivity.this);
 				classifyBox.setEnabled(isChecked);
-				if (isChecked) {
-					//ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
-					CurrentStateListener.get().enable(funfManager, UserActivity.this);
-				} else {
-					//ClassifyAlarm.cancelAlarm(UserActivity.this);
-					CurrentStateListener.get().disable(funfManager, UserActivity.this);
-				}
+				Intent i = new Intent(getApplicationContext(), DataCollectionService.class);
+				i.putExtra(DataCollectionService.INTENT_EXTRA_COLLECTION, isChecked);
+				startService(i);
 			}
 		});
 	    
 	    classifyBox = (CheckBox) findViewById(R.id.checkbox_classify);
-	    classifyBox.setChecked(AppPrefs.isEnableClassify(this)); 
+	    classifyBox.setChecked(AppPrefs.isControlRinger(this)); 
 	    classifyBox.setEnabled(AppPrefs.isEnableCollection(this));
 	    classifyBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				AppPrefs.setEnableClassify(isChecked, UserActivity.this);
+				AppPrefs.setControlRinger(isChecked, UserActivity.this);
 				if (isChecked) {
 					ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
 				} else {
@@ -106,12 +96,7 @@ public class UserActivity extends Activity {
 		super.onResume();
 		tempDisableBox.setChecked(AppPrefs.isTempDisable(this)); 
 	}
-	@Override
-	protected void onDestroy() {
-		CurrentStateListener.get().disable(funfManager, getApplicationContext());
-		unbindService(funfManagerConn);
-		super.onDestroy();
-	}
+
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -153,32 +138,6 @@ public class UserActivity extends Activity {
 		}
 	}
 	
-	private ServiceConnection funfManagerConn = new ServiceConnection() {    
-	    @Override
-	    public void onServiceConnected(ComponentName name, IBinder service) {
-	    	Log.d("TestActivity", "onServiceConnected");
-	        funfManager = ((FunfManager.LocalBinder)service).getManager();
-
-	        if (AppPrefs.isEnableCollection(UserActivity.this)) {
-		        CurrentStateListener.get().enable(funfManager, UserActivity.this);
-		        
-		        if (AppPrefs.isEnableClassify(UserActivity.this)) {
-		        	ClassifyAlarm.scheduleRepeatedAlarm(UserActivity.this);
-		        }
-	        }
-	        enableBox.setEnabled(true);
-	        
-	    }
-	    
-	    @Override
-	    public void onServiceDisconnected(ComponentName name) {
-	        funfManager = null;
-	    }
-	};
-	
-	
-	
-
 	private void chooseNewAccount() {
 		
 		Intent intent = AccountPicker.newChooseAccountIntent(null, null, new String[]{"com.google"},

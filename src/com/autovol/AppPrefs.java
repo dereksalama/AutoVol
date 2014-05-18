@@ -23,7 +23,6 @@ public class AppPrefs {
 	private static final String DEFAULT_RING_VOLUME = "default_ring_volume";
 
 	private static final String ENABLE_COLLECTION = "enable_collection";
-	private static final String ENABLE_CLASSIFY = "enable_classify";
 	private static final String LAST_CLASSIFICATION = "last_classification";
 	
 	// Local host
@@ -105,18 +104,6 @@ public class AppPrefs {
 		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
 		SharedPreferences.Editor edit = sp.edit();
 		edit.putBoolean(ENABLE_COLLECTION, enable);
-		edit.commit();
-	}
-	
-	public static boolean isEnableClassify(Context c) {
-		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
-		return sp.getBoolean(ENABLE_CLASSIFY, false);
-	}
-	
-	public static void setEnableClassify(boolean enable, Context c) {
-		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
-		SharedPreferences.Editor edit = sp.edit();
-		edit.putBoolean(ENABLE_CLASSIFY, enable);
 		edit.commit();
 	}
 	

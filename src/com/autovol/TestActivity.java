@@ -45,9 +45,9 @@ public class TestActivity extends Activity {
 			case AVG_KNN:
 				knnAvg.setText(type + ": " +jsonStr);
 				break;
-			case AVG_LOC_KNN:
-				knnAvgLoc.setText(type + ": " +jsonStr);
-				break;
+//			case AVG_LOC_KNN:
+//				knnAvgLoc.setText(type + ": " +jsonStr);
+//				break;
 			case CLUSTER_KNN:
 				knnClusterLoc.setText(type + ": " +jsonStr);
 				break;

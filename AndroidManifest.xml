@@ -15,23 +15,11 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-    <!-- Bluetooth -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-
     <!-- Light sensor -->
     <uses-feature android:name="android.hardware.sensor.light" />
 
-    <!-- Wifi -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
     <!-- Battery -->
     <uses-permission android:name="android.permission.BATTERY_STATS" />
-
-    <!-- Running apps -->
-    <uses-permission android:name="android.permission.GET_TASKS" />
 
     <!-- Activity -->
     <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
@@ -40,6 +28,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <uses-feature android:name="android.hardware.microphone" />
+
 
     <uses-sdk
         android:minSdkVersion="18"
@@ -69,6 +58,7 @@
         </service>
         <service android:name="com.autovol.ActivityRecognitionIntentService" >
         </service>
+        <service android:name="com.autovol.DataCollectionService"></service>
 
         <receiver
             android:name="edu.mit.media.funf.Launcher"
