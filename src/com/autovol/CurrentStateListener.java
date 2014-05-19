@@ -63,9 +63,13 @@ public class CurrentStateListener implements DataListener {
 			new LinkedList<CurrentStateData>());
 	
 	
+//	private static final String[] TYPES_NEEDING_INIT = { "lat" , "lon",
+//		"loc_provider", "activity_confidence", "light", "distance", "charging",
+//		"activity_type", "audio_mag", "screen_on", "screen_last_on", "ringer"};
+	
 	private static final String[] TYPES_NEEDING_INIT = { "lat" , "lon",
-		"loc_provider", "activity_confidence", "light", "distance", "charging",
-		"activity_type", "audio_mag", "screen_on", "screen_last_on", "ringer"};
+		"loc_provider", "light", "distance", "charging",
+		"audio_mag", "screen_on", "screen_last_on", "ringer"};
 
 	private Set<String> typesWaitingInit;
 	

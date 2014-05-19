@@ -54,9 +54,9 @@ public class TestActivity extends Activity {
 //			case PROB_LOC_KNN:
 //				knnProbLoc.setText(type + ": " +jsonStr);
 //				break;
-//			case RF:
-//				rf.setText(type + ": " +jsonStr);
-//				break;
+			case RF:
+				rf.setText(type + ": " +jsonStr);
+				break;
 //			case PROB_LOC_RF:
 //				probLocRf.setText(type + ": " +jsonStr);
 //				break;
