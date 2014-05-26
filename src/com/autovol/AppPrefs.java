@@ -29,7 +29,8 @@ public class AppPrefs {
 	private static final String LOCAL_BASE_URL = "http://10.0.1.17:8080";
 	
 	// AWS host
-	private static final String AWS_BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
+	//private static final String AWS_BASE_URL = "http://ec2-54-186-90-159.us-west-2.compute.amazonaws.com:8080";
+	private static final String AWS_BASE_URL = "http://ec2-54-200-9-42.us-west-2.compute.amazonaws.com:8080";
 	
 	public static void setUseLocalHost(boolean useLocalHost, Context c) {
 		SharedPreferences sp = c.getSharedPreferences(PREFS_NAME, 0);
